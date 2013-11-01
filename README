@@ -19,9 +19,6 @@ git clone https://github.com/phpengine/cleopatra && sudo php cleopatra/install (
 About:
 -----------------
 
-Server, Testing Server or Prod Server in minutes, silently, with an Operating System agnostic method of ensuring
-environment stability.
-
 This tool is for provisioning software and configurations to your boxes. You can set up complex provisions to your
 systems with one or two PHP files, or quickly set up cloud friendly deployment patterns.
 

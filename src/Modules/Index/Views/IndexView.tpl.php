@@ -3,17 +3,13 @@ Cleopatra by Golden Contact Computing
 
 About:
 -----------------
-This tool helps with setting up boxes. Its intended to get any box in your standard main environments to be
-up and running quickly. It's not meant to be an exhaustive list of installs for everything you'll ever need to
-install (obviously)
 
-Can be used to set up a Development Client, Development Server, Testing Server, or Production Server in minutes
+This tool is for provisioning software and configurations to your boxes. You can set up complex provisions to your
+systems with one or two PHP files, or quickly set up cloud friendly deployment patterns.
 
-... Staging/UAT is not missing from the list because in "Software my box has installed" terms it should be the
-same as Production.
-
-Furthermore, especially for Production, this is intended to be a quick solution to get you up and running and I
-do not and would never recommend going into Production without checking things for yourself.
+Cleopatra is extremely extendable, you can pretty easily write your own module that will configure your prod servers
+the way that you want them - and then use that as you will get the same automation benefits along with the security
+and infrastructure benefits of doing it correctly for your own setup
 
 -------------------------------------------------------------
 
