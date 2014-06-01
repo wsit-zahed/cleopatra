@@ -28,6 +28,7 @@ class BaseAWSEC2AllOS extends Base {
         require_once($pharFile) ;
     }
 
+    //@todo is it safe to leave these keys in env vars around?
     protected function askForAWSEC2AccessKey(){
         if (isset($this->params["aws-ec2-access-key"])) {
             putenv("AWS_ACCESS_KEY_ID={$this->params["aws-ec2-access-key"]}") ;
@@ -50,6 +51,7 @@ class BaseAWSEC2AllOS extends Base {
         return $key ;
     }
 
+    //@todo is it safe to leave these keys in env vars around?
     protected function askForAWSEC2SecretKey(){
         if (isset($this->params["aws-ec2-secret-key"])) {
             putenv("AWS_SECRET_KEY={$this->params["aws-ec2-secret-key"]}") ;
