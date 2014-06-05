@@ -1,0 +1,8 @@
+#
+# The Galera for MySQL database server configuration file.
+#
+# This file will se the configuration to join a Galera cluster
+#
+
+[wsrep]
+socket		= /var/run/mysqld/mysqld.sock
