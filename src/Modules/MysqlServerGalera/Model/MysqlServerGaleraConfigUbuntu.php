@@ -12,7 +12,7 @@ class MysqlServerGaleraConfigUbuntu extends Base {
     public $architectures = array("32", "64") ;
 
     // Model Group
-    public $modelGroup = array("Default") ;
+    public $modelGroup = array("GaleraConfig") ;
 
     private $environments ;
     private $environmentReplacements ;
@@ -61,9 +61,11 @@ class MysqlServerGaleraConfigUbuntu extends Base {
     }
 
     private function doConfigGalera() {
-      if ($this->params["route"]["action"] == "config-cluster-starter") {}
-      if ($this->params["route"]["action"] == "config-cluster-joiner") {}
-      $templatesDir = str_replace("Model", "Templates/EnvSpecific", dirname(__FILE__) ) ;
+      if ($this->params["route"]["action"] == "config-cluster-starter") {
+          $templateSubDir = "Templates/ClusterStarter" ;  }
+      else {
+          $templateSubDir = "Templates/ClusterJoiner" ;  }
+      $templatesDir = str_replace("Model", $templateSubDir, dirname(__FILE__) ) ;
       $templates = scandir($templatesDir);
       foreach ($this->environments as $environment) {
         foreach ($templates as $template) {
@@ -76,8 +78,7 @@ class MysqlServerGaleraConfigUbuntu extends Base {
               $templator->template(
                   file_get_contents($templatesDir.DIRECTORY_SEPARATOR.$template),
                   array(
-                      "gen_srv_array_text" => $this->getServerArrayText($environment["servers"]) ,
-                      "env_name" => $environment["any-app"]["gen_env_name"]
+                      "cluster_address" => $this->getClusterStarter($environment["servers"]) ,
                   ),
                   $targetLocation );
           echo $targetLocation."\n"; } } }

@@ -13,7 +13,7 @@ class MysqlServerGaleraInfo extends CleopatraBase {
   }
 
   public function routesAvailable() {
-    return array( "MysqlServerGalera" =>  array_merge(parent::routesAvailable(), array("install") ) );
+    return array( "MysqlServerGalera" =>  array_merge(parent::routesAvailable(), array("install", "config-galera-starter") ) );
   }
 
   public function routeAliases() {
@@ -30,9 +30,14 @@ class MysqlServerGaleraInfo extends CleopatraBase {
         Install the Galera Cluster compatible version of Mysql Server
         example: cleopatra mysql-server-galera install
 
-        - install
-        Install the Galera Cluster compatible version of Mysql Server
-        example: cleopatra mysql-server-galera install
+        - config-galera-starter
+        Configure the wsrep.cnf file for a cluster starter
+        example: cleopatra mysql-server-galera config-galera-starter
+
+        - config-galera-joiner
+        Configure the wsrep.cnf file for a cluster joiner
+        example: cleopatra mysql-server-galera config-galera-joiner
+
 
   Notes, during mysql install a root password will be set. First, it'll look
   for the parameter --mysql-root-pass, if this is not set, it'll look in the
