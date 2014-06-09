@@ -21,6 +21,14 @@ class VSphere extends Base {
             $this->content["vSphereResult"] = $thisModel->addBox();
             return array ("type"=>"view", "view"=>"vSphereAPI", "pageVars"=>$this->content); }
 
+        if ($action=="box-clone") {
+            $thisModel = $this->getModelAndCheckDependencies(substr(get_class($this), 11), $pageVars, "BoxClone") ;
+            if (is_array($thisModel)) { return $this->failDependencies($pageVars, $this->content, $thisModel) ; }
+            $isDefaultAction = self::checkDefaultActions($pageVars, array(), $thisModel) ;
+            if ( is_array($isDefaultAction) ) { return $isDefaultAction; }
+            $this->content["vSphereResult"] = $thisModel->cloneBox();
+            return array ("type"=>"view", "view"=>"vSphereAPI", "pageVars"=>$this->content); }
+
         if ($action=="box-remove") {
             $thisModel = $this->getModelAndCheckDependencies(substr(get_class($this), 11), $pageVars, "BoxRemove") ;
             if (is_array($thisModel)) { return $this->failDependencies($pageVars, $this->content, $thisModel) ; }

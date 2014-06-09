@@ -14,7 +14,7 @@ class VSphereInfo extends CleopatraBase {
 
     public function routesAvailable() {
       return array( "VSphere" => array_merge(parent::routesAvailable(), array("save-ssh-key",
-          "box-add", "box-remove", "box-destroy", "box-destroy-all", "list", "test") ) );
+          "box-add", "box-clone", "box-remove", "box-destroy", "box-destroy-all", "list", "test") ) );
     }
 
     public function routeAliases() {
@@ -37,6 +37,13 @@ class VSphereInfo extends CleopatraBase {
                     --yes
                     --vsphere-ssh-key-path="/home/dave/.ssh/bastion.pub"
                     --vsphere-ssh-key-name="bastion"
+
+        - box-clone
+        Lets you clone boxes in VMWare VSphere, and adds them to your papyrusfile
+        example: cleopatra vsphere box-add
+                    --yes
+                    --vsphere-source="box-1"
+                    --vsphere-target="box-2"
 
         - box-destroy
         Will destroy box/es in an environment for you, and remove them from the papyrus file

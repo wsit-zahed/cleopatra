@@ -14,12 +14,12 @@ class VSphereBoxClone extends BaseVSphereAllOS {
     // Model Group
     public $modelGroup = array("BoxClone") ;
 
-    public function askWhetherToBoxAdd($params=null) {
-        return $this->addBox($params);
+    public function askWhetherToBoxClone($params=null) {
+        return $this->cloneBox($params);
     }
 
-    public function addBox() {
-        if ($this->askForBoxAddExecute() != true) { return false; }
+    public function cloneBox() {
+        if ($this->askForBoxCloneExecute() != true) { return false; }
         $this->domainUser = $this->askForVSphereDomainUser();
         $this->vSpherePass = $this->askForVSpherePassword();
         $this->vSphereUrl = $this->askForVSphereUrl();
@@ -40,12 +40,12 @@ class VSphereBoxClone extends BaseVSphereAllOS {
                     $envName = $environment["any-app"]["gen_env_name"];
 
                     if (isset($this->params["yes"]) && $this->params["yes"]==true) {
-                        $addToThisEnvironment = true ; }
+                        $cloneToThisEnvironment = true ; }
                     else {
-                        $question = 'Add VMWare VSphere Server Boxes to '.$envName.'?';
-                        $addToThisEnvironment = self::askYesOrNo($question); }
+                        $question = 'Clone VMWare VSphere Server Boxes to '.$envName.'?';
+                        $cloneToThisEnvironment = self::askYesOrNo($question); }
 
-                    if ($addToThisEnvironment == true) {
+                    if ($cloneToThisEnvironment == true) {
                         for ($i = 0; $i < $this->getServerGroupBoxAmount(); $i++) {
                             $serverData = array();
                             $serverData["prefix"] = $serverPrefix ;
@@ -59,7 +59,7 @@ class VSphereBoxClone extends BaseVSphereAllOS {
                                 : $serverData["envName"].'-'.$serverData["sCount"] ;
                             $response = $this->getNewServerFromVSphere($serverData) ;
                             // var_dump("response", $response) ;
-                            $this->addServerToPapyrus($envName, $response); } } } }
+                            $this->cloneServerToPapyrus($envName, $response); } } } }
 
                 return true ; }
         else {
@@ -67,9 +67,9 @@ class VSphereBoxClone extends BaseVSphereAllOS {
             $logging->log("The environment $workingEnvironment does not exist.") ; }
     }
 
-    private function askForBoxAddExecute() {
+    private function askForBoxCloneExecute() {
         if (isset($this->params["yes"]) && $this->params["yes"]==true) { return true ; }
-        $question = 'Add VMWare VSphere Server Boxes?';
+        $question = 'Clone VMWare VSphere Server Boxes?';
         return self::askYesOrNo($question);
     }
 
@@ -83,7 +83,7 @@ class VSphereBoxClone extends BaseVSphereAllOS {
     private function getWorkingEnvironment() {
         if (isset($this->params["environment-name"])) {
             return $this->params["environment-name"] ; }
-        $question = 'Enter Environment to add Servers to';
+        $question = 'Enter Environment to clone Servers to';
         return self::askForInput($question);
     }
 
@@ -111,7 +111,7 @@ class VSphereBoxClone extends BaseVSphereAllOS {
     private function getServerGroupBoxAmount() {
         if (isset($this->params["box-amount"])) {
             return $this->params["box-amount"] ; }
-        $question = 'Enter number of boxes to add to Environment';
+        $question = 'Enter number of boxes to clone to Environment';
         return self::askForInput($question, true);
     }
 
@@ -150,9 +150,9 @@ class VSphereBoxClone extends BaseVSphereAllOS {
         return $callOut ;
     }
 
-    private function addServerToPapyrus($envName, $data) {
+    private function cloneServerToPapyrus($envName, $data) {
         $dropletData = $this->getDropletData($data->droplet->id);
-        if (!isset($dropletData->ip_address) && isset($this->params["wait-for-box-info"])) {
+        if (!isset($dropletData->ip_cloneress) && isset($this->params["wait-for-box-info"])) {
             $dropletData = $this->waitForBoxInfo($data->droplet->id); }
         if (($dropletData->status != "active") && isset($this->params["wait-until-active"])) {
             $dropletData = $this->waitUntilActive($data->droplet->id); }
@@ -233,7 +233,12 @@ class VSphereBoxClone extends BaseVSphereAllOS {
 
         require_once (__DIR__."/../Libraries/scd.php") ;
 
-        $client = new \soapclientd("$this->vSphereUrl/sdk/vimService.wsdl", array ('location' => "$this->vSphereUrl/sdk/", 'trace' => 1));
+        // ($request, $location, $action, $version, $one_way = 0)
+
+        // $client = new \soapclientd("$this->vSphereUrl/sdk/vimService.wsdl", array ('location' => "$this->vSphereUrl/sdk/", 'trace' => 1));
+
+        $client = new \soapclient("$this->vSphereUrl/sdk/vimService.wsdl", array ('location' => "$this->vSphereUrl/sdk/", 'trace' => 1));
+            // SoapClient->__getLastResponse
 
         // this is to get us a root folder, $ret->rootFolder
         try {
@@ -259,9 +264,9 @@ class VSphereBoxClone extends BaseVSphereAllOS {
 
         // create a vm
         try {
-            echo "trying to create vm\n" ;
+            echo "trying to clone vm\n" ;
             $request = new \stdClass();
-            $request->_this = $ret->sessionManager; // $ret->rootFolder;
+            $request->_this = $ret->sessionManager; // i think this is the vm-*** id
             $request->config = array (
                 'name' => "dave_box",
                 'annotation' => "Go on, its friday, just work"
@@ -270,8 +275,15 @@ class VSphereBoxClone extends BaseVSphereAllOS {
             $res1 = $client->__soapCall('CreateVM_Task', array((array)$request));
             var_dump("r1: ", $res1) ; }
         catch (\Exception $e) {
-            var_dump($e->getMessage());
-            exit; }
+            var_dump(
+                "exception message: ",
+                $e->getMessage(),
+                "last request: ",
+                $client->__getLastRequest(),
+                "last response: ",
+                $client->__getLastResponse()
+            );
+        }
 
         // This logs out
         try {
