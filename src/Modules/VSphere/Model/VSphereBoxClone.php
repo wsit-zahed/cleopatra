@@ -2,7 +2,7 @@
 
 Namespace Model;
 
-class VSphereBoxAdd extends BaseVSphereAllOS {
+class VSphereBoxClone extends BaseVSphereAllOS {
 
     // Compatibility
     public $os = array("any") ;
@@ -12,7 +12,7 @@ class VSphereBoxAdd extends BaseVSphereAllOS {
     public $architectures = array("any") ;
 
     // Model Group
-    public $modelGroup = array("BoxAdd") ;
+    public $modelGroup = array("BoxClone") ;
 
     public function askWhetherToBoxAdd($params=null) {
         return $this->addBox($params);
@@ -232,7 +232,6 @@ class VSphereBoxAdd extends BaseVSphereAllOS {
         \Model\AppConfig::setProjectVariable("vsphere-url", $this->vSphereUrl) ;
 
         require_once (__DIR__."/../Libraries/scd.php") ;
-        require_once (__DIR__."/../Libraries/scd.php") ;
 
         $client = new \soapclientd("$this->vSphereUrl/sdk/vimService.wsdl", array ('location' => "$this->vSphereUrl/sdk/", 'trace' => 1));
 
@@ -268,7 +267,6 @@ class VSphereBoxAdd extends BaseVSphereAllOS {
                 'annotation' => "Go on, its friday, just work"
             );
             $request->pool = $ret->rootFolder;
-            var_dump($request) ;
             $res1 = $client->__soapCall('CreateVM_Task', array((array)$request));
             var_dump("r1: ", $res1) ; }
         catch (\Exception $e) {
