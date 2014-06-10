@@ -12,7 +12,7 @@ class VSphereList extends BaseVSphereAllOS {
     public $architectures = array("any") ;
 
     // Model Group
-    public $modelGroup = array("Listing") ;
+    public $modelGroup = array("ListVM") ;
 
     public function __construct($params) {
         parent::__construct($params) ;
