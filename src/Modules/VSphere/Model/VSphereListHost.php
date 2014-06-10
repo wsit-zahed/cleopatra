@@ -2,7 +2,7 @@
 
 Namespace Model;
 
-class VSphereList extends BaseVSphereAllOS {
+class VSphereListHost extends BaseVSphereAllOS {
 
     // Compatibility
     public $os = array("any") ;
@@ -12,7 +12,7 @@ class VSphereList extends BaseVSphereAllOS {
     public $architectures = array("any") ;
 
     // Model Group
-    public $modelGroup = array("ListVM") ;
+    public $modelGroup = array("ListHost") ;
 
     public function __construct($params) {
         parent::__construct($params) ;
@@ -34,7 +34,7 @@ class VSphereList extends BaseVSphereAllOS {
 
     private function askForListExecute(){
         if (isset($this->params["yes"]) && $this->params["yes"]==true) { return true ; }
-        $question = 'List VM Data?';
+        $question = 'List Host Data?';
         return self::askYesOrNo($question);
     }
 
@@ -59,9 +59,7 @@ class VSphereList extends BaseVSphereAllOS {
         \Model\AppConfig::setProjectVariable("vsphere-domain-user", $this->domainUser) ;
         \Model\AppConfig::setProjectVariable("vsphere-url", $this->vSphereUrl) ;
 
-        require_once (__DIR__."/../Libraries/scd.php") ;
-
-        $client = new \soapclientd("$this->vSphereUrl/sdk/vimService.wsdl", array ('location' => "$this->vSphereUrl/sdk/", 'trace' => 1));
+        $client = new \soapclient("$this->vSphereUrl/sdk/vimService.wsdl", array ('location' => "$this->vSphereUrl/sdk/", 'trace' => 1));
 
         // this is to get us a root folder, $ret->rootFolder
         try {
@@ -99,20 +97,23 @@ class VSphereList extends BaseVSphereAllOS {
         try {
             $request = new \stdClass();
             $request->_this = $ret->propertyCollector;
-            $request->specSet = array (
-                'propSet' => array (
-                    array ('type' => 'VirtualMachine', 'all' => 0, 'pathSet' => array ('name', 'guest.ipAddress', 'guest.guestState', 'runtime.powerState', 'config.hardware.numCPU', 'config.hardware.memoryMB')),
+            $request->specSet = array(
+                'propSet' => array(
+                    array('type' => 'Folder', 'all' => 1),
+//                  array ('type' => 'VirtualMachine', 'all' => 1, 'pathSet' => array ('name', 'guest.ipAddress', 'guest.guestState', 'runtime.powerState', 'config.hardware.numCPU', 'config.hardware.memoryMB')),
                 ),
-                'objectSet' => array (
+                'objectSet' => array(
                     'obj' => $ret->rootFolder,
                     'skip' => false,
-                    'selectSet' => array (
-                        new \soapvar($a, SOAP_ENC_OBJECT, 'TraversalSpec'),
-                        new \soapvar($b, SOAP_ENC_OBJECT, 'TraversalSpec'),
+                    'selectSet' => array(
+                        // new \soapvar($a, SOAP_ENC_OBJECT, 'TraversalSpec'),
+                        // new \soapvar($b, SOAP_ENC_OBJECT, 'TraversalSpec'),
                     ),
                 )
             );
-            $res = $client->__soapCall('RetrieveProperties', array((array)$request)); }
+            $res = $client->__soapCall('RetrieveProperties', array((array)$request));
+            // var_dump($res) ;
+        }
         catch (\Exception $e) {
             echo $e->getMessage(); }
 

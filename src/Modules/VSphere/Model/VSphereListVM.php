@@ -2,7 +2,7 @@
 
 Namespace Model;
 
-class VSphereList extends BaseVSphereAllOS {
+class VSphereListVM extends BaseVSphereAllOS {
 
     // Compatibility
     public $os = array("any") ;
@@ -21,7 +21,6 @@ class VSphereList extends BaseVSphereAllOS {
     public function askWhetherToListData() {
         return $this->performVSphereListData();
     }
-
 
     protected function performVSphereListData(){
         if ($this->askForListExecute() != true) { return false; }
@@ -59,9 +58,9 @@ class VSphereList extends BaseVSphereAllOS {
         \Model\AppConfig::setProjectVariable("vsphere-domain-user", $this->domainUser) ;
         \Model\AppConfig::setProjectVariable("vsphere-url", $this->vSphereUrl) ;
 
-        require_once (__DIR__."/../Libraries/scd.php") ;
+        // require_once (__DIR__."/../Libraries/scd.php") ;
 
-        $client = new \soapclientd("$this->vSphereUrl/sdk/vimService.wsdl", array ('location' => "$this->vSphereUrl/sdk/", 'trace' => 1));
+        $client = new \soapclient("$this->vSphereUrl/sdk/vimService.wsdl", array ('location' => "$this->vSphereUrl/sdk/", 'trace' => 1));
 
         // this is to get us a root folder, $ret->rootFolder
         try {
