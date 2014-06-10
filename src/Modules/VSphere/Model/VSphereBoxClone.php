@@ -266,7 +266,7 @@ class VSphereBoxClone extends BaseVSphereAllOS {
         try {
             echo "trying to clone vm\n" ;
             $request = new \stdClass();
-            $request->_this = $ret->sessionManager; // i think this is the vm-*** id
+            $request->_this = $ret->sessionManager; // i think this is the vm-*** id, it requires a M.O.R.
             $request->config = array (
                 'name' => "dave_box",
                 'annotation' => "Go on, its friday, just work"
