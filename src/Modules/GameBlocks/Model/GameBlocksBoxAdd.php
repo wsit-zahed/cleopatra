@@ -2,7 +2,7 @@
 
 Namespace Model;
 
-class VSphereBoxAdd extends BaseVSphereAllOS {
+class GameBlocksBoxAdd extends BaseGameBlocksAllOS {
 
     // Compatibility
     public $os = array("any") ;
@@ -20,9 +20,8 @@ class VSphereBoxAdd extends BaseVSphereAllOS {
 
     public function addBox() {
         if ($this->askForBoxAddExecute() != true) { return false; }
-        $this->domainUser = $this->askForVSphereDomainUser();
-        $this->vSpherePass = $this->askForVSpherePassword();
-        $this->vSphereUrl = $this->askForVSphereUrl();
+        $this->apiKey = $this->askForGameBlocksAPIKey();
+        $this->clientId = $this->askForGameBlocksClientID();
         $serverPrefix = $this->getServerPrefix();
         $environments = \Model\AppConfig::getProjectVariable("environments");
         $workingEnvironment = $this->getWorkingEnvironment();
@@ -42,7 +41,7 @@ class VSphereBoxAdd extends BaseVSphereAllOS {
                     if (isset($this->params["yes"]) && $this->params["yes"]==true) {
                         $addToThisEnvironment = true ; }
                     else {
-                        $question = 'Add VMWare VSphere Server Boxes to '.$envName.'?';
+                        $question = 'Add Game Blocks Server Boxes to '.$envName.'?';
                         $addToThisEnvironment = self::askYesOrNo($question); }
 
                     if ($addToThisEnvironment == true) {
@@ -51,13 +50,13 @@ class VSphereBoxAdd extends BaseVSphereAllOS {
                             $serverData["prefix"] = $serverPrefix ;
                             $serverData["envName"] = $envName ;
                             $serverData["sCount"] = $i ;
-                            // $serverData["sizeID"] = $this->getServerGroupSizeID() ;
-                            // $serverData["imageID"] = $this->getServerGroupImageID() ;
-                            // $serverData["regionID"] = $this->getServerGroupRegionID() ;
+                            $serverData["sizeID"] = $this->getServerGroupSizeID() ;
+                            $serverData["imageID"] = $this->getServerGroupImageID() ;
+                            $serverData["regionID"] = $this->getServerGroupRegionID() ;
                             $serverData["name"] = (isset( $serverData["prefix"]) && strlen( $serverData["prefix"])>0)
                                 ? $serverData["prefix"].'-'.$serverData["envName"].'-'.$serverData["sCount"]
                                 : $serverData["envName"].'-'.$serverData["sCount"] ;
-                            $response = $this->getNewServerFromVSphere($serverData) ;
+                            $response = $this->getNewServerFromGameBlocks($serverData) ;
                             // var_dump("response", $response) ;
                             $this->addServerToPapyrus($envName, $response); } } } }
 
@@ -69,7 +68,7 @@ class VSphereBoxAdd extends BaseVSphereAllOS {
 
     private function askForBoxAddExecute() {
         if (isset($this->params["yes"]) && $this->params["yes"]==true) { return true ; }
-        $question = 'Add VMWare VSphere Server Boxes?';
+        $question = 'Add Game Blocks Server Boxes?';
         return self::askYesOrNo($question);
     }
 
@@ -135,15 +134,15 @@ class VSphereBoxAdd extends BaseVSphereAllOS {
         return $this->params["private-ssh-key-path"] ;
     }
 
-    private function getNewServerFromVSphere($serverData) {
+    private function getNewServerFromGameBlocks($serverData) {
         $callVars = array() ;
         $callVars["name"] = $serverData["name"];
-        // $callVars["size_id"] = $serverData["sizeID"];
-        // $callVars["image_id"] = $serverData["imageID"];
-        // $callVars["region_id"] = $serverData["regionID"];
-        // $callVars["ssh_key_ids"] = $this->getAllSshKeyIdsString();
-
-        $callOut = $this->vSphereCall();
+        $callVars["size_id"] = $serverData["sizeID"];
+        $callVars["image_id"] = $serverData["imageID"];
+        $callVars["region_id"] = $serverData["regionID"];
+        $callVars["ssh_key_ids"] = $this->getAllSshKeyIdsString();
+        $curlUrl = "https://api.digitalocean.com/droplets/new" ;
+        $callOut = $this->gameBlocksCall($callVars, $curlUrl);
         $loggingFactory = new \Model\Logging();
         $logging = $loggingFactory->getModel($this->params);
         $logging->log("Request for {$callVars["name"]} complete") ;
@@ -160,7 +159,7 @@ class VSphereBoxAdd extends BaseVSphereAllOS {
         $server["target"] = $dropletData->droplet->ip_address;
         $server["user"] = $this->getUsernameOfBox() ;
         $server["password"] = $this->getSSHKeyLocation() ;
-        $server["provider"] = "VSphere";
+        $server["provider"] = "GameBlocks";
         $server["id"] = $data->droplet->id;
         $server["name"] = $data->droplet->name;
         // file_put_contents("/tmp/outloc", getcwd()) ;
@@ -177,8 +176,8 @@ class VSphereBoxAdd extends BaseVSphereAllOS {
     private function getAllSshKeyIdsString() {
         if (isset($this->params["ssh-key-ids"])) {
             return $this->params["ssh-key-ids"] ; }
-        $curlUrl = "https://api.vmware-vsphere.com/ssh_keys" ;
-        $sshKeysObject =  $this->vSphereCall(array(), $curlUrl);
+        $curlUrl = "https://api.digitalocean.com/ssh_keys" ;
+        $sshKeysObject =  $this->gameBlocksCall(array(), $curlUrl);
         $sshKeys = array();
         // @todo use the list call to get ids, this uses name
         foreach($sshKeysObject->ssh_keys as $sshKey) {
@@ -188,8 +187,8 @@ class VSphereBoxAdd extends BaseVSphereAllOS {
     }
 
     private function getDropletData($dropletId) {
-        $curlUrl = "https://api.vmware-vsphere.com/droplets/$dropletId" ;
-        $dropletObject =  $this->vSphereCall(array(), $curlUrl);
+        $curlUrl = "https://api.digitalocean.com/droplets/$dropletId" ;
+        $dropletObject =  $this->gameBlocksCall(array(), $curlUrl);
         return $dropletObject;
     }
 
@@ -221,72 +220,6 @@ class VSphereBoxAdd extends BaseVSphereAllOS {
             sleep (10);
             $i2++; }
         return null;
-    }
-
-
-    protected function vSphereCall() {
-
-        // @todo do we actually need to set this every time? highly unlikely
-        \Model\AppConfig::setProjectVariable("vsphere-pass", $this->vSpherePass) ;
-        \Model\AppConfig::setProjectVariable("vsphere-domain-user", $this->domainUser) ;
-        \Model\AppConfig::setProjectVariable("vsphere-url", $this->vSphereUrl) ;
-
-        require_once (__DIR__."/../Libraries/scd.php") ;
-        require_once (__DIR__."/../Libraries/scd.php") ;
-
-        $client = new \soapclientd("$this->vSphereUrl/sdk/vimService.wsdl", array ('location' => "$this->vSphereUrl/sdk/", 'trace' => 1));
-
-        // this is to get us a root folder, $ret->rootFolder
-        try {
-            $request = new \stdClass();
-            $request->_this = array ('_' => 'ServiceInstance', 'type' => 'ServiceInstance');
-            $response = $client->__soapCall('RetrieveServiceContent', array((array)$request)); }
-        catch (\Exception $e) {
-            echo $e->getMessage();
-            exit; }
-        $ret = $response->returnval; // group-d1
-
-        // This makes sure we can login
-        try {
-            $request = new \stdClass();
-            $request->_this = $ret->sessionManager;
-            $request->userName = $this->domainUser;
-            $request->password =  $this->vSpherePass;
-            $response = $client->__soapCall('Login', array((array)$request));
-            echo "User " . $response->returnval->fullName .', '. $response->returnval->userName . " Logged In successfully\n"; }
-        catch (\Exception $e) {
-            echo $e->getMessage();
-            exit; }
-
-        // create a vm
-        try {
-            echo "trying to create vm\n" ;
-            $request = new \stdClass();
-            $request->_this = $ret->sessionManager; // $ret->rootFolder;
-            $request->config = array (
-                'name' => "dave_box",
-                'annotation' => "Go on, its friday, just work"
-            );
-            $request->pool = $ret->rootFolder;
-            var_dump($request) ;
-            $res1 = $client->__soapCall('CreateVM_Task', array((array)$request));
-            var_dump("r1: ", $res1) ; }
-        catch (\Exception $e) {
-            var_dump($e->getMessage());
-            exit; }
-
-        // This logs out
-        try {
-            $request = new \stdClass();
-            $request->_this = $ret->sessionManager;
-            $request->userName = $this->domainUser;
-            $request->password =  $this->vSpherePass;
-            $res2 = $client->__soapCall('Logout', array((array)$request)); }
-        catch (\Exception $e) {
-            var_dump($e->getMessage());
-            exit; }
-
-        return $res1->returnval ;
     }
 
 }
