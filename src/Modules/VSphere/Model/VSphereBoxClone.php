@@ -259,7 +259,24 @@ class VSphereBoxClone extends BaseVSphereAllOS {
         \Model\AppConfig::setProjectVariable("vsphere-pass", $this->vSpherePass) ;
         \Model\AppConfig::setProjectVariable("vsphere-domain-user", $this->domainUser) ;
         \Model\AppConfig::setProjectVariable("vsphere-url", $this->vSphereUrl) ;
-        $client = new \soapclient("$this->vSphereUrl/sdk/vimService.wsdl", array ('location' => "$this->vSphereUrl/sdk/", 'trace' => 1));
+
+        // @todo temporarily disabling ssl certificate check for https
+        $context = stream_context_create(array(
+            'http'=>array(
+                'user_agent' => 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:29.0) Gecko/20100101 Firefox/29.0'
+            ),
+            'ssl' => array(
+                'verify_peer' => false,
+                'allow_self_signed' => true
+            )
+        ));
+
+        try {
+        // $client = new \soapclient("$this->vSphereUrl/sdk/vimService.wsdl", array ('location' => "$this->vSphereUrl/sdk/", 'trace' => 1));
+            $client = new \soapclient("$this->vSphereUrl/sdk/vimService.wsdl", array ('location' => "$this->vSphereUrl/sdk/", 'trace' => 1, "stream_context" => $context, 'cache_wsdl' => WSDL_CACHE_NONE)); }
+        catch (\Exception $e) {
+                echo $e->getMessage();
+                exit; }
 
         // this is to get us a root folder, $ret->rootFolder
         try {
@@ -300,6 +317,7 @@ class VSphereBoxClone extends BaseVSphereAllOS {
             );
             $res1 = $client->__soapCall('CloneVM_Task', array((array)$request)); }
         catch (\Exception $e) {
+            var_dump($client->__getLastResponse()) ;
             echo $e->getMessage();
             exit; }
 
