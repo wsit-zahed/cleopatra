@@ -41,6 +41,27 @@ class VSphereBoxClone extends BaseVSphereAllOS {
                     $envName = $environment["any-app"]["gen_env_name"];
 
                     if (isset($this->params["yes"]) && $this->params["yes"]==true) {
+                        $addToThisEnvironment = true ; }
+                    else {
+                        $question = 'Add VMWare VSphere Server Boxes to '.$envName.'?';
+                        $addToThisEnvironment = self::askYesOrNo($question); }
+
+                    if ($addToThisEnvironment == true) {
+                        for ($i = 0; $i < $this->getServerGroupBoxAmount(); $i++) {
+                            $serverData = array();
+                            $serverData["prefix"] = $serverPrefix ;
+                            $serverData["envName"] = $envName ;
+                            $serverData["sCount"] = $i ;
+                            // $serverData["sizeID"] = $this->getServerGroupSizeID() ;
+                            // $serverData["imageID"] = $this->getServerGroupImageID() ;
+                            // $serverData["regionID"] = $this->getServerGroupRegionID() ;
+                            $serverData["name"] = (isset( $serverData["prefix"]) && strlen( $serverData["prefix"])>0)
+                                ? $serverData["prefix"].'-'.$serverData["envName"].'-'.$serverData["sCount"]
+                                : $serverData["envName"].'-'.$serverData["sCount"] ;
+                            $response = $this->getNewServerFromVSphere($serverData) ;
+                            // var_dump("response", $response) ;
+                            $this->addServerToPapyrus($envName, $response); }
+
                         $cloneToThisEnvironment = true ; }
                     else {
                         $question = 'Clone VMWare VSphere Server Boxes to '.$envName.'?';
@@ -65,12 +86,16 @@ class VSphereBoxClone extends BaseVSphereAllOS {
                             $response = $this->getNewServerFromVSphere($serverData) ;
                             // var_dump("response", $response) ;
                             // $this->addServerToPapyrus($envName, $response);
-                        } } } }
+                        }
+                    }
+                }
+            }
                 return true ; }
         else {
             \Core\BootStrap::setExitCode(1) ;
             $logging->log("The environment $workingEnvironment does not exist.") ; }
     }
+
 
     protected function askForBoxCloneExecute() {
         if (isset($this->params["yes"]) && $this->params["yes"]==true) { return true ; }
@@ -85,17 +110,17 @@ class VSphereBoxClone extends BaseVSphereAllOS {
         return self::askForInput($question);
     }
 
+    private function getWorkingEnvironment() {
+        if (isset($this->params["environment-name"])) {
+            return $this->params["environment-name"] ; }
+        $question = 'Enter Environment to add Servers to';
+        return self::askForInput($question);
+    }
+
     protected function getServerSuffix() {
         if (isset($this->params["server-suffix"])) {
             return $this->params["server-suffix"] ; }
         $question = 'Enter Suffix for all Servers (None is fine)';
-        return self::askForInput($question);
-    }
-
-    protected function getWorkingEnvironment() {
-        if (isset($this->params["environment-name"])) {
-            return $this->params["environment-name"] ; }
-        $question = 'Enter Environment to clone Servers to';
         return self::askForInput($question);
     }
 
@@ -164,6 +189,7 @@ class VSphereBoxClone extends BaseVSphereAllOS {
         // $callVars["image_id"] = $serverData["imageID"];
         // $callVars["region_id"] = $serverData["regionID"];
         // $callVars["ssh_key_ids"] = $this->getAllSshKeyIdsString();
+
         $callOut = $this->vSphereCall($callVars);
         $loggingFactory = new \Model\Logging();
         $logging = $loggingFactory->getModel($this->params);
@@ -193,6 +219,19 @@ class VSphereBoxClone extends BaseVSphereAllOS {
         \Model\AppConfig::setProjectVariable("environments", $environments);
     }
 
+    private function getAllSshKeyIdsString() {
+        if (isset($this->params["ssh-key-ids"])) {
+            return $this->params["ssh-key-ids"] ; }
+        $curlUrl = "https://api.vmware-vsphere.com/ssh_keys" ;
+        $sshKeysObject =  $this->vSphereCall(array(), $curlUrl);
+        $sshKeys = array();
+        // @todo use the list call to get ids, this uses name
+        foreach($sshKeysObject->ssh_keys as $sshKey) {
+            $sshKeys[] = $sshKey->id ; }
+        $keysString = implode(",", $sshKeys) ;
+        return $keysString;
+    }
+
     protected function getDropletData($dropletId) {
         $curlUrl = "https://api.vmware-vsphere.com/droplets/$dropletId" ;
         $dropletObject = "" ; // $this->vSphereCall(array(), $curlUrl);
@@ -216,12 +255,10 @@ class VSphereBoxClone extends BaseVSphereAllOS {
 
 
     protected function vSphereCall($callVars) {
-
         // @todo do we actually need to set this every time? highly unlikely
         \Model\AppConfig::setProjectVariable("vsphere-pass", $this->vSpherePass) ;
         \Model\AppConfig::setProjectVariable("vsphere-domain-user", $this->domainUser) ;
         \Model\AppConfig::setProjectVariable("vsphere-url", $this->vSphereUrl) ;
-
         $client = new \soapclient("$this->vSphereUrl/sdk/vimService.wsdl", array ('location' => "$this->vSphereUrl/sdk/", 'trace' => 1));
 
         // this is to get us a root folder, $ret->rootFolder
@@ -248,6 +285,7 @@ class VSphereBoxClone extends BaseVSphereAllOS {
 
         // create a vm
         try {
+            echo "trying to create vm\n" ;
             $request = new \stdClass();
             $request->_this = $callVars["source-vm-id"] ; //"vm-156" ; //this is the vm-*** id, a Managed Object Reference
             $request->folder = $callVars["folder-id"] ; //"group-v3" ;
@@ -273,6 +311,7 @@ class VSphereBoxClone extends BaseVSphereAllOS {
             $request->password =  $this->vSpherePass;
             $res2 = $client->__soapCall('Logout', array((array)$request)); }
         catch (\Exception $e) {
+            var_dump($e->getMessage());
             echo $e->getMessage() ;
             exit; }
 
