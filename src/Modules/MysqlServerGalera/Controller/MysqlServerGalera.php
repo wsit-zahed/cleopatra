@@ -38,6 +38,9 @@ class MysqlServerGalera extends Base {
             $this->content["result"] = $thisModel->askWhetherToCleofy();
             return array ("type"=>"view", "view"=>"cleofy", "pageVars"=>$this->content); }
 
+        $this->content["messages"][] = "Invalid Mysql Galera Action";
+        return array ("type"=>"control", "control"=>"index", "pageVars"=>$this->content);
+
     }
 
 }
