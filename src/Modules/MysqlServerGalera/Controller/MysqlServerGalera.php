@@ -9,13 +9,10 @@ class MysqlServerGalera extends Base {
         $thisModel = $this->getModelAndCheckDependencies(substr(get_class($this), 11), $pageVars) ;
         // if we don't have an object, its an array of errors
         if (is_array($thisModel)) { return $this->failDependencies($pageVars, $this->content, $thisModel) ; }
+        $isDefaultAction = self::checkDefaultActions($pageVars, array(), $thisModel) ;
+        if ( is_array($isDefaultAction) ) { return $isDefaultAction; }
 
         $action = $pageVars["route"]["action"];
-
-        if ($action=="help") {
-            $helpModel = new \Model\Help();
-            $this->content["helpData"] = $helpModel->getHelpData($pageVars["route"]["control"]);
-            return array ("type"=>"view", "view"=>"help", "pageVars"=>$this->content); }
 
         if (in_array($action, array("install-generic-autopilots") )) {
             $thisModel = $this->getModelAndCheckDependencies(substr(get_class($this), 11), $pageVars, "GenericAutos") ;
@@ -37,6 +34,9 @@ class MysqlServerGalera extends Base {
             if (is_array($thisModel)) { return $this->failDependencies($pageVars, $this->content, $thisModel) ; }
             $this->content["result"] = $thisModel->askWhetherToCleofy();
             return array ("type"=>"view", "view"=>"cleofy", "pageVars"=>$this->content); }
+
+        $this->content["messages"][] = "Invalid Mysql Galera Action";
+        return array ("type"=>"control", "control"=>"index", "pageVars"=>$this->content);
 
     }
 
