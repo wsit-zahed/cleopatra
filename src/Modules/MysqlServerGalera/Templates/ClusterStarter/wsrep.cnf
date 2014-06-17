@@ -5,4 +5,6 @@
 #
 
 [wsrep]
-socket		= /var/run/mysqld/mysqld.sock
+wsrep_provider=/usr/lib/galera/libgalera_smm.so
+wsrep_cluster_address="gcomm://"
+wsrep_sst_method=rsync
