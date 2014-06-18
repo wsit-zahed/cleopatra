@@ -13,7 +13,8 @@ class MysqlServerGaleraInfo extends CleopatraBase {
   }
 
   public function routesAvailable() {
-    return array( "MysqlServerGalera" =>  array_merge(parent::routesAvailable(), array("install", "config-galera-starter") ) );
+    return array( "MysqlServerGalera" =>  array_merge(parent::routesAvailable(), array("install", "config-galera-starter",
+        "config-galera-joiner") ) );
   }
 
   public function routeAliases() {
@@ -39,9 +40,8 @@ class MysqlServerGaleraInfo extends CleopatraBase {
         example: cleopatra mysql-server-galera config-galera-joiner
 
 
-  Notes, during mysql install a root password will be set. First, it'll look
-  for the parameter --mysql-root-pass, if this is not set, it'll look in the
-  cleopatra config for a mysql-default-root-pass setting, and failing both of
+  Notes, during mysql install a root password will be set. First, it'll look for the parameter --mysql-root-pass, if
+  this is not set, it'll look in the cleopatra config for a mysql-default-root-pass setting, and failing both of
   those it will just set the password for root to cleopatra.
 
 HELPDATA;
