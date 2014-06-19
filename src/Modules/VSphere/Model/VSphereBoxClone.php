@@ -35,33 +35,14 @@ class VSphereBoxClone extends BaseVSphereAllOS {
         $loggingFactory = new \Model\Logging();
         $logging = $loggingFactory->getModel($this->params);
 
+        var_dump("params", $this->params) ;
+
         if (isset($environmentExists)) {
             foreach ($environments as $environment) {
                 if ($environment["any-app"]["gen_env_name"] == $workingEnvironment) {
                     $envName = $environment["any-app"]["gen_env_name"];
 
                     if (isset($this->params["yes"]) && $this->params["yes"]==true) {
-                        $addToThisEnvironment = true ; }
-                    else {
-                        $question = 'Add VMWare VSphere Server Boxes to '.$envName.'?';
-                        $addToThisEnvironment = self::askYesOrNo($question); }
-
-                    if ($addToThisEnvironment == true) {
-                        for ($i = 0; $i < $this->getServerGroupBoxAmount(); $i++) {
-                            $serverData = array();
-                            $serverData["prefix"] = $serverPrefix ;
-                            $serverData["envName"] = $envName ;
-                            $serverData["sCount"] = $i ;
-                            // $serverData["sizeID"] = $this->getServerGroupSizeID() ;
-                            // $serverData["imageID"] = $this->getServerGroupImageID() ;
-                            // $serverData["regionID"] = $this->getServerGroupRegionID() ;
-                            $serverData["name"] = (isset( $serverData["prefix"]) && strlen( $serverData["prefix"])>0)
-                                ? $serverData["prefix"].'-'.$serverData["envName"].'-'.$serverData["sCount"]
-                                : $serverData["envName"].'-'.$serverData["sCount"] ;
-                            $response = $this->getNewServerFromVSphere($serverData) ;
-                            // var_dump("response", $response) ;
-                            $this->addServerToPapyrus($envName, $response); }
-
                         $cloneToThisEnvironment = true ; }
                     else {
                         $question = 'Clone VMWare VSphere Server Boxes to '.$envName.'?';
@@ -75,8 +56,8 @@ class VSphereBoxClone extends BaseVSphereAllOS {
                             $serverData["envName"] = $envName ;
                             $serverData["sCount"] = $i ;
                             // $serverData["sizeID"] = $this->getServerGroupSizeID() ;
-                            $serverData["folder-id"] = $this->getServerGroupFolderID() ;
-                            $serverData["source-vm-id"] = $this->getServerGroupSourceVMId() ;
+                            $serverData["folder"] = $this->getServerGroupFolderID() ;
+                            $serverData["vmid"] = $this->getServerGroupSourceVMId() ;
                             $serverData["name"] = (isset( $serverData["prefix"]) && strlen( $serverData["prefix"])>0)
                                 ? $serverData["prefix"].'-'.$serverData["envName"]
                                 : $serverData["envName"] ;
@@ -84,7 +65,7 @@ class VSphereBoxClone extends BaseVSphereAllOS {
                                 $serverData["name"] .= '-'.$serverData["suffix"] ; }
                             $serverData["name"] .= '-'.$serverData["sCount"] ;
                             $response = $this->getNewServerFromVSphere($serverData) ;
-                            // var_dump("response", $response) ;
+                            var_dump("response", $response) ;
                             // $this->addServerToPapyrus($envName, $response);
                         }
                     }
@@ -122,13 +103,6 @@ class VSphereBoxClone extends BaseVSphereAllOS {
             return $this->params["server-suffix"] ; }
         $question = 'Enter Suffix for all Servers (None is fine)';
         return self::askForInput($question);
-    }
-
-    protected function getServerGroupImageID() {
-        if (isset($this->params["image-id"])) {
-            return $this->params["image-id"] ; }
-        $question = 'Enter Image ID for this Server Group';
-        return self::askForInput($question, true);
     }
 
     protected function getServerGroupSourceVMId() {
@@ -185,9 +159,8 @@ class VSphereBoxClone extends BaseVSphereAllOS {
     protected function getNewServerFromVSphere($serverData) {
         $callVars = array() ;
         $callVars["name"] = $serverData["name"];
-        // $callVars["size_id"] = $serverData["sizeID"];
-        // $callVars["image_id"] = $serverData["imageID"];
-        // $callVars["region_id"] = $serverData["regionID"];
+        $callVars["folder"] = $serverData["folder"];
+        $callVars["vmid"] = $serverData["vmid"];
         // $callVars["ssh_key_ids"] = $this->getAllSshKeyIdsString();
 
         $callOut = $this->vSphereCall($callVars);
@@ -219,20 +192,7 @@ class VSphereBoxClone extends BaseVSphereAllOS {
         \Model\AppConfig::setProjectVariable("environments", $environments);
     }
 
-    private function getAllSshKeyIdsString() {
-        if (isset($this->params["ssh-key-ids"])) {
-            return $this->params["ssh-key-ids"] ; }
-        $curlUrl = "https://api.vmware-vsphere.com/ssh_keys" ;
-        $sshKeysObject =  $this->vSphereCall(array(), $curlUrl);
-        $sshKeys = array();
-        // @todo use the list call to get ids, this uses name
-        foreach($sshKeysObject->ssh_keys as $sshKey) {
-            $sshKeys[] = $sshKey->id ; }
-        $keysString = implode(",", $sshKeys) ;
-        return $keysString;
-    }
-
-    protected function getDropletData($dropletId) {
+    protected function getVMData($dropletId) {
         $curlUrl = "https://api.vmware-vsphere.com/droplets/$dropletId" ;
         $dropletObject = "" ; // $this->vSphereCall(array(), $curlUrl);
         return $dropletObject;
@@ -245,14 +205,13 @@ class VSphereBoxClone extends BaseVSphereAllOS {
             $loggingFactory = new \Model\Logging();
             $logging = $loggingFactory->getModel($this->params);
             $logging->log("Attempt $i2 for droplet $dropletId to become active...") ;
-            $dropletData = $this->getDropletData($dropletId);
+            $dropletData = $this->getVMData($dropletId);
             if (isset($dropletData->droplet->status) && $dropletData->droplet->status=="active") {
                 return $dropletData ; }
             sleep (10);
             $i2++; }
         return null;
     }
-
 
     protected function vSphereCall($callVars) {
         // @todo do we actually need to set this every time? highly unlikely
@@ -272,7 +231,6 @@ class VSphereBoxClone extends BaseVSphereAllOS {
         ));
 
         try {
-        // $client = new \soapclient("$this->vSphereUrl/sdk/vimService.wsdl", array ('location' => "$this->vSphereUrl/sdk/", 'trace' => 1));
             $client = new \soapclient("$this->vSphereUrl/sdk/vimService.wsdl", array ('location' => "$this->vSphereUrl/sdk/", 'trace' => 1, "stream_context" => $context, 'cache_wsdl' => WSDL_CACHE_NONE)); }
         catch (\Exception $e) {
                 echo $e->getMessage();
@@ -300,12 +258,11 @@ class VSphereBoxClone extends BaseVSphereAllOS {
             echo $e->getMessage();
             exit; }
 
-        // create a vm
+        // clone a vm
         try {
-            echo "trying to create vm\n" ;
             $request = new \stdClass();
-            $request->_this = $callVars["source-vm-id"] ; //"vm-156" ; //this is the vm-*** id, a Managed Object Reference
-            $request->folder = $callVars["folder-id"] ; //"group-v3" ;
+            $request->_this = $callVars["vmid"] ; //"vm-156" ; //this is the vm-*** id, a Managed Object Reference
+            $request->folder = $callVars["folder"] ; //"group-v3" ;
             $request->name = $callVars["name"] ;
             $request->spec = array (
                 // 'config' => "dave_box",
@@ -315,9 +272,8 @@ class VSphereBoxClone extends BaseVSphereAllOS {
                 // 'snapshot' => array(),
                 'template' => false,
             );
-            $res1 = $client->__soapCall('CloneVM_Task', array((array)$request)); }
+            $res1 = $client->__soapCall('CloneVM_Task', array((array)$request));   }
         catch (\Exception $e) {
-            var_dump($client->__getLastResponse()) ;
             echo $e->getMessage();
             exit; }
 
