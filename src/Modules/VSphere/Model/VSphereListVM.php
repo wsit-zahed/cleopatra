@@ -31,6 +31,24 @@ class VSphereListVM extends BaseVSphereAllOS {
         return $this->getDataListFromVSphere();
     }
 
+    public function performVSphereListVMByName($reqName){
+        if ($this->askForListExecute() != true) { return false; }
+        $this->domainUser = $this->askForVSphereDomainUser();
+        $this->vSpherePass = $this->askForVSpherePassword();
+        $this->vSphereUrl = $this->askForVSphereUrl();
+        $dl = $this->getDataListFromVSphere();
+        foreach ($dl as $vm) {
+            foreach($vm->propSet as $prop) {
+                if ( $prop->name == "name" && $prop->val == $reqName) {
+                    $props = array() ;
+                    $i = 0;
+                    foreach ($vm->propSet as $proppy) {
+                        $props[$proppy->name] = $proppy->val;
+                        $i++; }
+                    return $props ; } } }
+        return null ;
+    }
+
     private function askForListExecute(){
         if (isset($this->params["yes"]) && $this->params["yes"]==true) { return true ; }
         $question = 'List VM Data?';
@@ -79,7 +97,8 @@ class VSphereListVM extends BaseVSphereAllOS {
             $request->userName = $this->domainUser;
             $request->password =  $this->vSpherePass;
             $response = $client->__soapCall('Login', array((array)$request));
-            echo "User " . $response->returnval->fullName .', '. $response->returnval->userName . " Logged In successfully\n"; }
+            // echo "User " . $response->returnval->fullName .', '. $response->returnval->userName . " Logged In successfully\n";
+        }
         catch (\Exception $e) {
             echo $e->getMessage();
             exit; }

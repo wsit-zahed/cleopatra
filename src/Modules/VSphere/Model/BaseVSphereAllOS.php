@@ -18,6 +18,8 @@ class BaseVSphereAllOS extends Base {
     protected $domainUser ;
     protected $vSphereUrl ;
 
+    protected $client ;
+
     protected function askForVSphereDomainUser(){
         if (isset($this->params["vsphere-domain-user"])) { return $this->params["vsphere-domain-user"] ; }
         $papyrusVar = \Model\AppConfig::getProjectVariable("vsphere-domain-user") ;

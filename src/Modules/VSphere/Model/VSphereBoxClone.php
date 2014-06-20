@@ -35,8 +35,6 @@ class VSphereBoxClone extends BaseVSphereAllOS {
         $loggingFactory = new \Model\Logging();
         $logging = $loggingFactory->getModel($this->params);
 
-        var_dump("params", $this->params) ;
-
         if (isset($environmentExists)) {
             foreach ($environments as $environment) {
                 if ($environment["any-app"]["gen_env_name"] == $workingEnvironment) {
@@ -55,18 +53,19 @@ class VSphereBoxClone extends BaseVSphereAllOS {
                             $serverData["suffix"] = $serverSuffix ;
                             $serverData["envName"] = $envName ;
                             $serverData["sCount"] = $i ;
-                            // $serverData["sizeID"] = $this->getServerGroupSizeID() ;
                             $serverData["folder"] = $this->getServerGroupFolderID() ;
                             $serverData["vmid"] = $this->getServerGroupSourceVMId() ;
-                            $serverData["name"] = (isset( $serverData["prefix"]) && strlen( $serverData["prefix"])>0)
-                                ? $serverData["prefix"].'-'.$serverData["envName"]
-                                : $serverData["envName"] ;
-                            if (isset( $serverData["suffix"]) && strlen( $serverData["suffix"])>0) {
-                                $serverData["name"] .= '-'.$serverData["suffix"] ; }
-                            $serverData["name"] .= '-'.$serverData["sCount"] ;
+                            if (isset($this->params["force-name"])) {
+                                $serverData["name"] = $this->params["force-name"] ; }
+                            else {
+                                $serverData["name"] = (isset( $serverData["prefix"]) && strlen( $serverData["prefix"])>0)
+                                    ? $serverData["prefix"].'-'.$serverData["envName"]
+                                    : $serverData["envName"] ;
+                                if (isset( $serverData["suffix"]) && strlen( $serverData["suffix"])>0) {
+                                    $serverData["name"] .= '-'.$serverData["suffix"] ; }
+                                $serverData["name"] .= '-'.$serverData["sCount"] ; }
                             $response = $this->getNewServerFromVSphere($serverData) ;
-                            var_dump("response", $response) ;
-                            // $this->addServerToPapyrus($envName, $response);
+                            $this->addServerToPapyrus($serverData["name"], $envName, $response);
                         }
                     }
                 }
@@ -85,6 +84,7 @@ class VSphereBoxClone extends BaseVSphereAllOS {
     }
 
     protected function getServerPrefix() {
+        if (isset($this->params["force-name"])) { return "" ; }
         if (isset($this->params["server-prefix"])) {
             return $this->params["server-prefix"] ; }
         $question = 'Enter Prefix for all Servers (None is fine)';
@@ -99,6 +99,7 @@ class VSphereBoxClone extends BaseVSphereAllOS {
     }
 
     protected function getServerSuffix() {
+        if (isset($this->params["force-name"])) { return "" ; }
         if (isset($this->params["server-suffix"])) {
             return $this->params["server-suffix"] ; }
         $question = 'Enter Suffix for all Servers (None is fine)';
@@ -170,17 +171,17 @@ class VSphereBoxClone extends BaseVSphereAllOS {
         return $callOut ;
     }
 
-    protected function addServerToPapyrus($envName, $data) {
-        $dropletData = $this->getDropletData($data->droplet->id);
-        if (($dropletData->status != "active") && isset($this->params["wait-until-active"])) {
-            $dropletData = $this->waitUntilActive($data->droplet->id); }
+    protected function addServerToPapyrus($sName, $envName, $data) {
+        $vmData = $this->getVirtualMachineData($sName);
+        if (isset($this->params["wait-until-active"])) {
+            $vmData = $this->waitUntilActive($sName); }
         $server = array();
-        $server["target"] = $dropletData->droplet->ip_address;
+        $server["target"] = (isset($this->params["force-papyrus-ip"])) ? $this->params["force-papyrus-ip"] : $vmData["guest.ipAddress"] ;
         $server["user"] = $this->getUsernameOfBox() ;
         $server["password"] = $this->getSSHKeyLocation() ;
         $server["provider"] = "VSphere";
-        $server["id"] = $data->droplet->id;
-        $server["name"] = $data->droplet->name;
+        $server["id"] = $data->vm->id;
+        $server["name"] = $sName;
         // file_put_contents("/tmp/outloc", getcwd()) ;
         // file_put_contents("/tmp/outsrv", $server) ;
         $environments = \Model\AppConfig::getProjectVariable("environments");
@@ -192,22 +193,26 @@ class VSphereBoxClone extends BaseVSphereAllOS {
         \Model\AppConfig::setProjectVariable("environments", $environments);
     }
 
-    protected function getVMData($dropletId) {
-        $curlUrl = "https://api.vmware-vsphere.com/droplets/$dropletId" ;
-        $dropletObject = "" ; // $this->vSphereCall(array(), $curlUrl);
-        return $dropletObject;
+    protected function getVirtualMachineData($sName) {
+        $vSphereFactory = new VSphere();
+        $listVM = $vSphereFactory->getModel($this->params, "ListVM") ;
+        $vmObject = $listVM->performVSphereListVMByName($sName) ;
+        return $vmObject;
     }
 
-    protected function waitUntilActive($dropletId) {
+    protected function waitUntilActive($vmId) {
         $maxWaitTime = (isset($this->params["max-active-wait-time"])) ? $this->params["max-active-wait-time"] : "300" ;
         $i2 = 1 ;
         for($i=0; $i<=$maxWaitTime; $i=$i+10){
             $loggingFactory = new \Model\Logging();
             $logging = $loggingFactory->getModel($this->params);
-            $logging->log("Attempt $i2 for droplet $dropletId to become active...") ;
-            $dropletData = $this->getVMData($dropletId);
-            if (isset($dropletData->droplet->status) && $dropletData->droplet->status=="active") {
-                return $dropletData ; }
+            $logging->log("Attempt $i2 for vm $vmId to become active...") ;
+            $vmData = $this->getVirtualMachineData($vmId);
+            if ($i2 > 15) { var_dump("vmd", $vmData) ; }
+            if (isset($vmData["guest.guestState"]) && $vmData["guest.guestState"]=="running" &&
+                isset($vmData["guest.ipAddress"]) && strlen($vmData["guest.ipAddress"])>1 &&
+                isset($vmData["runtime.powerState"]) && $vmData["runtime.powerState"]=="poweredOn" ) {
+                return $vmData ; }
             sleep (10);
             $i2++; }
         return null;
@@ -231,7 +236,7 @@ class VSphereBoxClone extends BaseVSphereAllOS {
         ));
 
         try {
-            $client = new \soapclient("$this->vSphereUrl/sdk/vimService.wsdl", array ('location' => "$this->vSphereUrl/sdk/", 'trace' => 1, "stream_context" => $context, 'cache_wsdl' => WSDL_CACHE_NONE)); }
+            $this->client = new \soapclient("$this->vSphereUrl/sdk/vimService.wsdl", array ('location' => "$this->vSphereUrl/sdk/", 'trace' => 1, "stream_context" => $context, 'cache_wsdl' => WSDL_CACHE_NONE)); }
         catch (\Exception $e) {
                 echo $e->getMessage();
                 exit; }
@@ -240,7 +245,7 @@ class VSphereBoxClone extends BaseVSphereAllOS {
         try {
             $request = new \stdClass();
             $request->_this = array ('_' => 'ServiceInstance', 'type' => 'ServiceInstance');
-            $response = $client->__soapCall('RetrieveServiceContent', array((array)$request)); }
+            $response = $this->client->__soapCall('RetrieveServiceContent', array((array)$request)); }
         catch (\Exception $e) {
             echo $e->getMessage();
             exit; }
@@ -252,7 +257,7 @@ class VSphereBoxClone extends BaseVSphereAllOS {
             $request->_this = $ret->sessionManager;
             $request->userName = $this->domainUser;
             $request->password =  $this->vSpherePass;
-            $response = $client->__soapCall('Login', array((array)$request));
+            $response = $this->client->__soapCall('Login', array((array)$request));
             echo "User " . $response->returnval->fullName .', '. $response->returnval->userName . " Logged In successfully\n"; }
         catch (\Exception $e) {
             echo $e->getMessage();
@@ -272,7 +277,7 @@ class VSphereBoxClone extends BaseVSphereAllOS {
                 // 'snapshot' => array(),
                 'template' => false,
             );
-            $res1 = $client->__soapCall('CloneVM_Task', array((array)$request));   }
+            $res1 = $this->client->__soapCall('CloneVM_Task', array((array)$request));   }
         catch (\Exception $e) {
             echo $e->getMessage();
             exit; }
@@ -283,12 +288,12 @@ class VSphereBoxClone extends BaseVSphereAllOS {
             $request->_this = $ret->sessionManager;
             $request->userName = $this->domainUser;
             $request->password =  $this->vSpherePass;
-            $res2 = $client->__soapCall('Logout', array((array)$request)); }
+            $res2 = $this->client->__soapCall('Logout', array((array)$request)); }
         catch (\Exception $e) {
-            var_dump($e->getMessage());
             echo $e->getMessage() ;
             exit; }
 
+        var_dump("rv", $res1->returnval) ;
         return $res1->returnval ;
     }
 
