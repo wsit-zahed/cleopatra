@@ -31,7 +31,7 @@ class MysqlServerGaleraUbuntu extends BaseLinuxApp {
                 "sudo apt-get -f -y install",
             ) ),
             array("command"=> array(
-                "mysqld &",
+                "sudo mysqld &",
                 "/usr/bin/mysqladmin -u root password '".$newRootPass."'",
                 "/usr/bin/mysqladmin -u root -h $hostname password '".$newRootPass."'",
             ) ),
