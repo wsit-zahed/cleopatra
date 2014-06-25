@@ -17,6 +17,7 @@ class MysqlServerGaleraUbuntu extends BaseLinuxApp {
     public function __construct($params) {
         parent::__construct($params);
         $newRootPass = $this->getNewRootPass();
+        $hostname = $this->getHostname();
         $this->autopilotDefiner = "MysqlServerGalera";
         $this->installCommands = array(
             array("method"=> array("object" => $this, "method" => "packageRemove", "params" => array("Apt", "mysql-server")) ),
@@ -27,7 +28,13 @@ class MysqlServerGaleraUbuntu extends BaseLinuxApp {
                 "cd /tmp",
                 "wget https://launchpad.net/codership-mysql/5.6/5.6.16-25.5/+download/mysql-server-wsrep-5.6.16-25.5-amd64.deb",
                 "dpkg -i mysql-server-wsrep-5.6.16-25.5-amd64.deb",
-                "sudo apt-get -f -y install") ),
+                "sudo apt-get -f -y install",
+            ) ),
+            array("command"=> array(
+                "mysqld &",
+                "/usr/bin/mysqladmin -u root password '".$newRootPass."'",
+                "/usr/bin/mysqladmin -u root -h $hostname password '".$newRootPass."'",
+            ) ),
             array("method"=> array("object" => $this, "method" => "packageAdd", "params" => array("Apt", "mysql-client")) ),
         );
         $this->uninstallCommands = array(
@@ -54,6 +61,12 @@ class MysqlServerGaleraUbuntu extends BaseLinuxApp {
         else {
             $newRootPass = "cleopatra" ; }
         return $newRootPass;
+    }
+
+    private function getHostname() {
+        $hostnameFactory = new \Model\Hostname() ;
+        $hostname = $hostnameFactory->getModel($this->params) ;
+        return $hostname->getHostname();
     }
 
     public function versionInstalledCommandTrimmer($text) {
