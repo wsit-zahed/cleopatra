@@ -20,14 +20,14 @@ class MysqlServerGaleraUbuntu extends BaseLinuxApp {
         $this->autopilotDefiner = "MysqlServerGalera";
         $this->installCommands = array(
             array("method"=> array("object" => $this, "method" => "packageRemove", "params" => array("Apt", "mysql-server")) ),
-            array("command"=> array(
-                "echo mysql-server mysql-server/root_password password $newRootPass | sudo debconf-set-selections",
-                "echo mysql-server mysql-server/root_password_again password $newRootPass | sudo debconf-set-selections" ) ),
+//            array("command"=> array(
+//                "echo mysql-server mysql-server/root_password password $newRootPass | sudo debconf-set-selections",
+//                "echo mysql-server mysql-server/root_password_again password $newRootPass | sudo debconf-set-selections" ) ),
             array("command"=> array(
                 "cd /tmp",
                 "wget https://launchpad.net/codership-mysql/5.6/5.6.16-25.5/+download/mysql-server-wsrep-5.6.16-25.5-amd64.deb",
                 "dpkg -i mysql-server-wsrep-5.6.16-25.5-amd64.deb",
-                "sudo apt-get -f install") ),
+                "sudo apt-get -f -y install") ),
             array("method"=> array("object" => $this, "method" => "packageAdd", "params" => array("Apt", "mysql-client")) ),
         );
         $this->uninstallCommands = array(
