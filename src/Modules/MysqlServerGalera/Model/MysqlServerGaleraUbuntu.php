@@ -26,7 +26,8 @@ class MysqlServerGaleraUbuntu extends BaseLinuxApp {
             array("command"=> array(
                 "cd /tmp",
                 "wget https://launchpad.net/codership-mysql/5.6/5.6.16-25.5/+download/mysql-server-wsrep-5.6.16-25.5-amd64.deb",
-                "dpkg -i mysql-server-wsrep-5.6.16-25.5-amd64.deb" ) ),
+                "dpkg -i mysql-server-wsrep-5.6.16-25.5-amd64.deb",
+                "sudo apt-get -f install") ),
             array("method"=> array("object" => $this, "method" => "packageAdd", "params" => array("Apt", "mysql-client")) ),
         );
         $this->uninstallCommands = array(
