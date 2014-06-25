@@ -208,7 +208,7 @@ class VSphereBoxClone extends BaseVSphereAllOS {
             $logging = $loggingFactory->getModel($this->params);
             $logging->log("Attempt $i2 for vm $vmId to become active...") ;
             $vmData = $this->getVirtualMachineData($vmId);
-            if ($i2 > 15) { var_dump("vmd", $vmData) ; }
+            // if ($i2 > 15) { var_dump("vmd", $vmData) ; }
             if (isset($vmData["guest.guestState"]) && $vmData["guest.guestState"]=="running" &&
                 isset($vmData["guest.ipAddress"]) && strlen($vmData["guest.ipAddress"])>1 &&
                 isset($vmData["runtime.powerState"]) && $vmData["runtime.powerState"]=="poweredOn" ) {
@@ -293,7 +293,7 @@ class VSphereBoxClone extends BaseVSphereAllOS {
             echo $e->getMessage() ;
             exit; }
 
-        var_dump("rv", $res1->returnval) ;
+        // var_dump("rv", $res1->returnval) ;
         return $res1->returnval ;
     }
 
