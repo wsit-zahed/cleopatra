@@ -13,8 +13,8 @@ class MysqlServerGaleraInfo extends CleopatraBase {
   }
 
   public function routesAvailable() {
-    return array( "MysqlServerGalera" =>  array_merge(parent::routesAvailable(), array("install", "config-galera-starter",
-        "config-galera-joiner") ) );
+    return array( "MysqlServerGalera" =>  array_merge(parent::routesAvailable(), array("install",
+        "config-galera-starter", "config-galera-joiner") ) );
   }
 
   public function routeAliases() {
