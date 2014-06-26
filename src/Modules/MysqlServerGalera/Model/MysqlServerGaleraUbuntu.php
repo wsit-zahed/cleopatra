@@ -45,7 +45,8 @@ class MysqlServerGaleraUbuntu extends BaseLinuxApp {
         $this->programNameMachine = "mysqlservergalera"; // command and app dir name
         $this->programNameFriendly = "MySQL Server!"; // 12 chars
         $this->programNameInstaller = "MySQL Server";
-        // @todo create an executor for galera? so this works
+        // @todo create an executor for galera? so this works. currently, as it will never find an installed program
+        // by this name, so will always run throiugh the install
         $this->statusCommand = "mysqlgalera --version" ;
         $this->versionInstalledCommand = "sudo apt-cache policy mysql-server" ;
         $this->versionRecommendedCommand = "sudo apt-cache policy mysql-server" ;
