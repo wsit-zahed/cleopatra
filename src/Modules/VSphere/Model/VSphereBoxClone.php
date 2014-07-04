@@ -219,12 +219,10 @@ class VSphereBoxClone extends BaseVSphereAllOS {
     }
 
     protected function vSphereCall($callVars) {
-        // @todo do we actually need to set this every time? highly unlikely
         \Model\AppConfig::setProjectVariable("vsphere-pass", $this->vSpherePass) ;
         \Model\AppConfig::setProjectVariable("vsphere-domain-user", $this->domainUser) ;
         \Model\AppConfig::setProjectVariable("vsphere-url", $this->vSphereUrl) ;
 
-        // @todo temporarily disabling ssl certificate check for https
         $context = stream_context_create(array(
             'http'=>array(
                 'user_agent' => 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:29.0) Gecko/20100101 Firefox/29.0'
@@ -236,7 +234,10 @@ class VSphereBoxClone extends BaseVSphereAllOS {
         ));
 
         try {
-            $this->client = new \soapclient("$this->vSphereUrl/sdk/vimService.wsdl", array ('location' => "$this->vSphereUrl/sdk/", 'trace' => 1, "stream_context" => $context, 'cache_wsdl' => WSDL_CACHE_NONE)); }
+            if (isset($this->params["ignore-ssl-check"])) {
+                $this->client = new \soapclient("$this->vSphereUrl/sdk/vimService.wsdl", array ('location' => "$this->vSphereUrl/sdk/", 'trace' => 1, "stream_context" => $context, 'cache_wsdl' => WSDL_CACHE_NONE)); }
+            else {
+                $this->client = new \soapclient("$this->vSphereUrl/sdk/vimService.wsdl", array ('location' => "$this->vSphereUrl/sdk/", 'trace' => 1, 'cache_wsdl' => WSDL_CACHE_NONE)); } }
         catch (\Exception $e) {
                 echo $e->getMessage();
                 exit; }
