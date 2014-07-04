@@ -71,7 +71,6 @@ class VSphereListVM extends BaseVSphereAllOS {
 
     protected function vSphereCall(Array $curlParams) {
 
-        // @todo do we actually need to set this every time? highly unlikely
         \Model\AppConfig::setProjectVariable("vsphere-pass", $this->vSpherePass) ;
         \Model\AppConfig::setProjectVariable("vsphere-domain-user", $this->domainUser) ;
         \Model\AppConfig::setProjectVariable("vsphere-url", $this->vSphereUrl) ;

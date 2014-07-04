@@ -180,7 +180,6 @@ class VSphereBoxAdd extends BaseVSphereAllOS {
         $curlUrl = "https://api.vmware-vsphere.com/ssh_keys" ;
         $sshKeysObject =  $this->vSphereCall(array(), $curlUrl);
         $sshKeys = array();
-        // @todo use the list call to get ids, this uses name
         foreach($sshKeysObject->ssh_keys as $sshKey) {
             $sshKeys[] = $sshKey->id ; }
         $keysString = implode(",", $sshKeys) ;
@@ -226,7 +225,6 @@ class VSphereBoxAdd extends BaseVSphereAllOS {
 
     protected function vSphereCall() {
 
-        // @todo do we actually need to set this every time? highly unlikely
         \Model\AppConfig::setProjectVariable("vsphere-pass", $this->vSpherePass) ;
         \Model\AppConfig::setProjectVariable("vsphere-domain-user", $this->domainUser) ;
         \Model\AppConfig::setProjectVariable("vsphere-url", $this->vSphereUrl) ;
