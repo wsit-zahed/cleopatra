@@ -2,6 +2,6 @@
 
 Namespace Controller ;
 
-class Phlagrant extends Base {
+class Phrankinsense extends Base {
 
 }

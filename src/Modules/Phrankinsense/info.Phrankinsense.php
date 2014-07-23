@@ -2,41 +2,41 @@
 
 Namespace Info;
 
-class PhlagrantInfo extends CleopatraBase {
+class PhrankinsenseInfo extends CleopatraBase {
 
     public $hidden = false;
 
-    public $name = "Phlagrant - The Virtual Machine management solution for PHP";
+    public $name = "Phrankinsense - The Pharoah Tools Project Management Solution";
 
     public function __construct() {
       parent::__construct();
     }
 
     public function routesAvailable() {
-      return array( "Phlagrant" =>  array_merge(parent::routesAvailable(), array("install") ) );
+      return array( "Phrankinsense" =>  array_merge(parent::routesAvailable(), array("install", "ensure", "uninstall") ) );
     }
 
     public function routeAliases() {
-      return array("phlagrant"=>"Phlagrant");
+      return array("phrankinsense"=>"Phrankinsense");
     }
 
     public function helpDefinition() {
       $help = <<<"HELPDATA"
-  This command allows you to install or update Phlagrant.
+  This command allows you to install or update Phrankinsense.
 
-  Phlagrant, phlagrant
+  Phrankinsense, phrankinsense
 
         - install
-        Installs the latest version of phlagrant
-        example: cleopatra phlagrant install
+        Installs the latest version of phrankinsense
+        example: cleopatra phrankinsense install
 
         - ensure
-        Ensures phlagrant is installed
-        example: cleopatra phlagrant ensure
+        Ensures phrankinsense is installed
+        example: cleopatra phrankinsense ensure
 
         - uninstall
-        Uninstalls the latest version of phlagrant
-        example: cleopatra phlagrant uninstall
+        Uninstalls the latest version of phrankinsense
+        example: cleopatra phrankinsense uninstall
 HELPDATA;
       return $help ;
     }
