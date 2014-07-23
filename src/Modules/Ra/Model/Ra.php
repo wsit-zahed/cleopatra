@@ -2,6 +2,6 @@
 
 Namespace Model;
 
-class Phlagrant extends BaseModelFactory {
+class Ra extends BaseModelFactory {
 
 }

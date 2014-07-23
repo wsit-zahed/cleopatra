@@ -2,7 +2,7 @@
 
 Namespace Model;
 
-class PhlagrantAllLinux extends BasePHPApp {
+class RaAllLinux extends BasePHPApp {
 
     // Compatibility
     public $os = array("any") ;
@@ -16,18 +16,18 @@ class PhlagrantAllLinux extends BasePHPApp {
 
     public function __construct($params) {
         parent::__construct($params);
-        $this->autopilotDefiner = "Phlagrant";
+        $this->autopilotDefiner = "Ra";
         $this->fileSources = array(
           array(
-            "http://git.pharoah-tools.org.uk/git/phpengine/phlagrant.git",
-            "phlagrant",
+            "http://git.pharoah-tools.org.uk/git/phpengine/ra.git",
+            "ra",
             null // can be null for none
           )
         );
-        $this->programNameMachine = "phlagrant"; // command and app dir name
-        $this->programNameFriendly = " Phlagrant "; // 12 chars
-        $this->programNameInstaller = "Phlagrant";
-        $this->programExecutorTargetPath = 'phlagrant/src/Bootstrap.php';
+        $this->programNameMachine = "ra"; // command and app dir name
+        $this->programNameFriendly = " Ra "; // 12 chars
+        $this->programNameInstaller = "Ra";
+        $this->programExecutorTargetPath = 'ra/src/Bootstrap.php';
         $this->initialize();
     }
 
