@@ -162,13 +162,14 @@ class VSphereBoxClone extends BaseVSphereAllOS {
         $callVars["name"] = $serverData["name"];
         $callVars["folder"] = $serverData["folder"];
         $callVars["vmid"] = $serverData["vmid"];
-        // $callVars["ssh_key_ids"] = $this->getAllSshKeyIdsString();
-
         $callOut = $this->vSphereCall($callVars);
         $loggingFactory = new \Model\Logging();
         $logging = $loggingFactory->getModel($this->params);
         $logging->log("Request for {$callVars["name"]} complete") ;
-        return $callOut ;
+        $ar = array();
+        $ar["response"] = $callOut;
+        $ar["request"] = $callVars;
+        return $ar ;
     }
 
     protected function addServerToPapyrus($sName, $envName, $data) {
@@ -180,16 +181,12 @@ class VSphereBoxClone extends BaseVSphereAllOS {
         $server["user"] = $this->getUsernameOfBox() ;
         $server["password"] = $this->getSSHKeyLocation() ;
         $server["provider"] = "VSphere";
-        $server["id"] = $data->vm->id;
+        $server["id"] = $data["request"]["vmid"] ;
         $server["name"] = $sName;
-        // file_put_contents("/tmp/outloc", getcwd()) ;
-        // file_put_contents("/tmp/outsrv", $server) ;
         $environments = \Model\AppConfig::getProjectVariable("environments");
-        // file_put_contents("/tmp/outenv1", serialize($environments)) ;
         for ($i= 0 ; $i<count($environments); $i++) {
             if ($environments[$i]["any-app"]["gen_env_name"] == $envName) {
                 $environments[$i]["servers"][] = $server; } }
-        // file_put_contents("/tmp/outenv2", serialize($environments)) ;
         \Model\AppConfig::setProjectVariable("environments", $environments);
     }
 
@@ -208,7 +205,6 @@ class VSphereBoxClone extends BaseVSphereAllOS {
             $logging = $loggingFactory->getModel($this->params);
             $logging->log("Attempt $i2 for vm $vmId to become active...") ;
             $vmData = $this->getVirtualMachineData($vmId);
-            // if ($i2 > 15) { var_dump("vmd", $vmData) ; }
             if (isset($vmData["guest.guestState"]) && $vmData["guest.guestState"]=="running" &&
                 isset($vmData["guest.ipAddress"]) && strlen($vmData["guest.ipAddress"])>1 &&
                 isset($vmData["runtime.powerState"]) && $vmData["runtime.powerState"]=="poweredOn" ) {
