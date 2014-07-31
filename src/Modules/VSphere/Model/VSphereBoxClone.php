@@ -194,8 +194,6 @@ class VSphereBoxClone extends BaseVSphereAllOS {
         $vSphereFactory = new VSphere();
         $listVM = $vSphereFactory->getModel($this->params, "ListVM") ;
         $vmObject = $listVM->performVSphereListVMByName($sName) ;
-
-        var_dump("sname", $sName, "vmo", $vmObject );
         return $vmObject;
     }
 
