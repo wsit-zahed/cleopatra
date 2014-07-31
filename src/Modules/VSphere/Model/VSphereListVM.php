@@ -27,7 +27,6 @@ class VSphereListVM extends BaseVSphereAllOS {
         $this->domainUser = $this->askForVSphereDomainUser();
         $this->vSpherePass = $this->askForVSpherePassword();
         $this->vSphereUrl = $this->askForVSphereUrl();
-        // $dataToList = $this->askForDataTypeToList();
         return $this->getDataListFromVSphere();
     }
 
@@ -41,6 +40,7 @@ class VSphereListVM extends BaseVSphereAllOS {
             foreach($vm->propSet as $prop) {
                 if ( $prop->name == "name" && $prop->val == $reqName) {
                     $props = array() ;
+                    $props["vm-id"] = $vm->obj->_ ;
                     $i = 0;
                     foreach ($vm->propSet as $proppy) {
                         $props[$proppy->name] = $proppy->val;
@@ -53,15 +53,6 @@ class VSphereListVM extends BaseVSphereAllOS {
         if (isset($this->params["yes"]) && $this->params["yes"]==true) { return true ; }
         $question = 'List VM Data?';
         return self::askYesOrNo($question);
-    }
-
-    private function askForDataTypeToList(){
-        $question = 'Please choose a data type to list:';
-        $options = array("droplets", "sizes", "images", "domains", "regions", "ssh_keys");
-        if (isset($this->params["vsphere-list-data-type"]) &&
-            in_array($this->params["vsphere-list-data-type"], $options)) {
-            return $this->params["vsphere-list-data-type"] ; }
-        return self::askForArrayOption($question, $options, true);
     }
 
     public function getDataListFromVSphere(){
