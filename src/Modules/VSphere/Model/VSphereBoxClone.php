@@ -181,7 +181,7 @@ class VSphereBoxClone extends BaseVSphereAllOS {
         $server["user"] = $this->getUsernameOfBox() ;
         $server["password"] = $this->getSSHKeyLocation() ;
         $server["provider"] = "VSphere";
-        $server["id"] = $data["request"]["vmid"] ;
+        $server["id"] = $vmData["vm-id"] ;
         $server["name"] = $sName;
         $environments = \Model\AppConfig::getProjectVariable("environments");
         for ($i= 0 ; $i<count($environments); $i++) {
@@ -194,6 +194,8 @@ class VSphereBoxClone extends BaseVSphereAllOS {
         $vSphereFactory = new VSphere();
         $listVM = $vSphereFactory->getModel($this->params, "ListVM") ;
         $vmObject = $listVM->performVSphereListVMByName($sName) ;
+
+        var_dump("sname", $sName, "vmo", $vmObject );
         return $vmObject;
     }
 
