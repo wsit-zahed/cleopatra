@@ -14,7 +14,8 @@ class VSphereInfo extends CleopatraBase {
 
     public function routesAvailable() {
       return array( "VSphere" => array_merge(parent::routesAvailable(), array("save-ssh-key", "box-add", "box-clone",
-          "box-remove", "box-destroy", "box-destroy-all", "list-vm", "list-vms", "list-host", "list-hosts", "test") ) );
+          "box-remove", "box-destroy", "box-destroy-all", "box-power-off", "list-vm", "list-vms", "list-host",
+          "list-hosts", "test") ) );
     }
 
     public function routeAliases() {
