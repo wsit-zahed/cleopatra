@@ -49,7 +49,7 @@ class VSphereBoxPowerOff extends BaseVSphereAllOS {
     protected function powerOffById() {
         $loggingFactory = new \Model\Logging();
         $logging = $loggingFactory->getModel($this->params);
-        if (isset($this->params["vm-id"])) { $this->params["vmid"] = $this->params["vm-id"] ; }
+        if (isset($this->params["vmid"])) { $this->params["vm-id"] = $this->params["vmid"] ; }
         if (isset($this->params["vm-id"])) {
             $callData = array() ;
             $callData["vmid"] = $this->params["vm-id"] ;
