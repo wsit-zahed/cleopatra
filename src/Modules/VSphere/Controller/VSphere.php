@@ -13,6 +13,8 @@ class VSphere extends Base {
 
         $action = $pageVars["route"]["action"];
 
+        // @todo do this in a loop
+
         if ($action=="box-add") {
             $thisModel = $this->getModelAndCheckDependencies(substr(get_class($this), 11), $pageVars, "BoxAdd") ;
             if (is_array($thisModel)) { return $this->failDependencies($pageVars, $this->content, $thisModel) ; }
@@ -35,6 +37,14 @@ class VSphere extends Base {
             $isDefaultAction = self::checkDefaultActions($pageVars, array(), $thisModel) ;
             if ( is_array($isDefaultAction) ) { return $isDefaultAction; }
             $this->content["vSphereResult"] = $thisModel->askWhetherToSaveOverwriteCurrent();
+            return array ("type"=>"view", "view"=>"vSphereAPI", "pageVars"=>$this->content); }
+
+        if ($action=="box-power-off") {
+            $thisModel = $this->getModelAndCheckDependencies(substr(get_class($this), 11), $pageVars, "BoxPowerOff") ;
+            if (is_array($thisModel)) { return $this->failDependencies($pageVars, $this->content, $thisModel) ; }
+            $isDefaultAction = self::checkDefaultActions($pageVars, array(), $thisModel) ;
+            if ( is_array($isDefaultAction) ) { return $isDefaultAction; }
+            $this->content["vSphereResult"] = $thisModel->askWhetherToPowerOff();
             return array ("type"=>"view", "view"=>"vSphereAPI", "pageVars"=>$this->content); }
 
         if ($action=="box-destroy") {
