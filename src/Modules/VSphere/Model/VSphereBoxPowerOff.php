@@ -14,7 +14,7 @@ class VSphereBoxPowerOff extends BaseVSphereAllOS {
     // Model Group
     public $modelGroup = array("BoxPowerOff") ;
 
-    public function askWhetherToBoxPowerOff($params=null) {
+    public function askWhetherToPowerOff($params=null) {
         return $this->powerOffBox($params);
     }
 
