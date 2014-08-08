@@ -1,0 +1,5 @@
+{
+    "require": {
+        "rackspace/php-opencloud": "dev-master"
+    }
+}
