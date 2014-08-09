@@ -14,18 +14,20 @@ class RackspaceSshKey extends BaseRackspaceAllOS {
     // Model Group
     public $modelGroup = array("SshKey") ;
 
-    public function __construct($params = array()) {
-        parent::__construct($params) ;
+//    public function __construct($params = array()) {
+//        parent::__construct($params) ;
+//    }
+
+    public function askWhetherToSaveSshKey() {
+        return $this->performRackspaceSaveSshKey();
     }
 
-    public function askWhetherToSaveSshKey($params=null) {
-        return $this->performRackspaceSaveSshKey($params);
-    }
-
-    public function performRackspaceSaveSshKey($params=null) {
+    public function performRackspaceSaveSshKey() {
+        var_dump($this->params) ;
         if ($this->askForSSHKeyExecute() != true) { return false; }
-        $this->apiKey = $this->askForRackspaceAPIKey();
         $this->username = $this->askForRackspaceUsername();
+        $this->apiKey = $this->askForRackspaceAPIKey();
+        $this->getClient();
         $fileLocation = $this->askForSSHKeyPublicFileLocation();
         $fileData = file_get_contents($fileLocation);
         $keyName = $this->askForSSHKeyNameForRackspace();
@@ -53,31 +55,19 @@ class RackspaceSshKey extends BaseRackspaceAllOS {
     }
 
     public function saveSshKeyToRackspace($keyData, $keyName){
-        $callVars = array();
         $keyData = str_replace("\n", "", $keyData);
-        $callVars["ssh_pub_key"] = urlencode($keyData);
-        $callVars["name"] = $keyName;
-        // $curlUrl = "https://api.rackspace.com/v1/ssh_keys/new" ;
-        // return $this->rackspaceCall($callVars, $curlUrl);
-
         // 2. Create Compute service object
         $region = 'ORD';
-        $service = $client->computeService(null, $region);
-
+        $service = $this->rackspaceClient->computeService(null, $region);
         // 3. Get empty keypair
         $keypair = $service->keypair();
-
-        $payload =
-
         // 4. Create
         $keypair->create(array(
-            'name'      => 'new_public_key',
-            'publicKey' => $payload
+            'name'      => $keyName,
+            'publicKey' => $keyData
         ));
-
-        // @todo
+        // @todo check if it actually worked
         return true ;
-
     }
 
 }
