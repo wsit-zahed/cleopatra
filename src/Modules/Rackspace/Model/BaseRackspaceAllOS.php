@@ -2,6 +2,9 @@
 
 Namespace Model;
 
+// use OpenCloud\Rackspace;
+use Guzzle\Http\Exception\BadResponseException;
+
 class BaseRackspaceAllOS extends Base {
 
     // Compatibility
@@ -17,9 +20,6 @@ class BaseRackspaceAllOS extends Base {
     protected $username ;
     protected $apiKey ;
     protected $rackspaceClient ;
-
-    public function __construct($params) {
-    }
 
     protected function askForRackspaceAPIKey(){
         if (isset($this->params["rackspace-api-key"])) { return $this->params["rackspace-api-key"] ; }
@@ -60,13 +60,9 @@ class BaseRackspaceAllOS extends Base {
 
     protected function getClient() {
 
+        require dirname(__DIR__) . 'vendor/autoload.php';
 
-        require __DIR__ . '/../../vendor/autoload.php';
-
-    use OpenCloud\Rackspace;
-    use Guzzle\Http\Exception\BadResponseException;
-
-// 1. Instantiate a Rackspace client.
+        // 1. Instantiate a Rackspace client.
         $this->rackspaceClient = new Rackspace(Rackspace::US_IDENTITY_ENDPOINT, array(
             'username' => getenv('RAX_USERNAME'),
             'apiKey'   => getenv('RAX_API_KEY')
