@@ -6,7 +6,7 @@ class RackspaceInfo extends CleopatraBase {
 
     public $hidden = false;
 
-    public $name = "Rackspace Server Management Functions";
+    public $name = "Rackspace/Opencloud Server Management Functions";
 
     public function _construct() {
       parent::__construct();
@@ -18,7 +18,7 @@ class RackspaceInfo extends CleopatraBase {
     }
 
     public function routeAliases() {
-      return array("rackspace"=>"Rackspace", "rackspace"=>"Rackspace");
+      return array("rackspace"=>"Rackspace");
     }
 
     public function boxProviderName() {
@@ -29,7 +29,7 @@ class RackspaceInfo extends CleopatraBase {
        $help = <<<"HELPDATA"
     This is an extension provided for Handling Servers on Rackspace.
 
-    Rackspace, rackspace, rackspace
+    Rackspace, rackspace
 
         - box-add
         Lets you add boxes to Rackspace, and adds them to your papyrusfile
@@ -43,11 +43,11 @@ class RackspaceInfo extends CleopatraBase {
         example: cleopatra rackspace box-destroy --yes --guess --rackspace-ssh-key-path="/home/dave/.ssh/bastion.pub" --rackspace-ssh-key-name="bastion"
 
         - box-destroy-all
-        Will destroy all boxes in your digital ocean account - Careful - its irreversible
+        Will destroy all boxes in your Rackspace account - Careful - its irreversible
         example: cleopatra rackspace box-destroy-all --yes --guess
 
         - save-ssh-key
-        Will let you save a local ssh key to your Rackspace account, so you can ssh in to your nodes
+        Will let you save a local ssh key to your Rackspace account, so you can ssh in to your nodes with it
         securely and without a password
         example: cleopatra rackspace save-ssh-key
                     --yes
@@ -55,7 +55,7 @@ class RackspaceInfo extends CleopatraBase {
                     --rackspace-ssh-key-name="bastion"
 
         - list
-        Will display data about your digital ocean account
+        Will display data about your Rackspace account
         example: cleopatra rackspace list
         example: cleopatra rackspace list --yes
                     --guess # use project saved connection details if possible
