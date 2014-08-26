@@ -6,7 +6,7 @@ class PhrankinsenseInfo extends CleopatraBase {
 
     public $hidden = false;
 
-    public $name = "Phrankinsense - The Pharoah Tools Project Management Solution";
+    public $name = "Phrankinsense - The Pharaoh Tools Project Management Solution";
 
     public function __construct() {
       parent::__construct();

@@ -6,7 +6,7 @@ class RaInfo extends CleopatraBase {
 
     public $hidden = false;
 
-    public $name = "Ra - The Pharoah Tools Build Server";
+    public $name = "Ra - The Pharaoh Tools Build Server";
 
     public function __construct() {
       parent::__construct();
