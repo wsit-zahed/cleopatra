@@ -1,6 +1,7 @@
 <?php
 
 Namespace Model;
+use OpenCloud\Compute\Constants\Network;
 
 class RackspaceBoxAdd extends BaseRackspaceAllOS {
 
@@ -20,8 +21,7 @@ class RackspaceBoxAdd extends BaseRackspaceAllOS {
 
     public function addBox() {
         if ($this->askForBoxAddExecute() != true) { return false; }
-        $this->apiKey = $this->askForRackspaceAPIKey();
-        $this->username = $this->askForRackspaceUsername();
+        $this->initialiseRackspace();
         $serverPrefix = $this->getServerPrefix();
         $environments = \Model\AppConfig::getProjectVariable("environments");
         $workingEnvironment = $this->getWorkingEnvironment();
@@ -66,55 +66,48 @@ class RackspaceBoxAdd extends BaseRackspaceAllOS {
             $logging->log("The environment $workingEnvironment does not exist.") ; }
     }
 
-    private function askForBoxAddExecute() {
+    protected function askForBoxAddExecute() {
         if (isset($this->params["yes"]) && $this->params["yes"]==true) { return true ; }
         $question = 'Add Rackspace Server Boxes?';
         return self::askYesOrNo($question);
     }
 
-    private function getServerPrefix() {
+    protected function getServerPrefix() {
         if (isset($this->params["server-prefix"])) {
             return $this->params["server-prefix"] ; }
         $question = 'Enter Prefix for all Servers (None is fine)';
         return self::askForInput($question);
     }
 
-    private function getWorkingEnvironment() {
+    protected function getWorkingEnvironment() {
         if (isset($this->params["environment-name"])) {
             return $this->params["environment-name"] ; }
         $question = 'Enter Environment to add Servers to';
         return self::askForInput($question);
     }
 
-    private function getServerGroupImageID() {
+    protected function getServerGroupImageID() {
         if (isset($this->params["image-id"])) {
             return $this->params["image-id"] ; }
         $question = 'Enter Image ID for this Server Group';
         return self::askForInput($question, true);
     }
 
-    private function getServerGroupSizeID() {
+    protected function getServerGroupSizeID() {
         if (isset($this->params["size-id"])) {
             return $this->params["size-id"] ; }
         $question = 'Enter size ID for this Server Group';
         return self::askForInput($question, true);
     }
 
-    private function getServerGroupRegionID() {
-        if (isset($this->params["region-id"])) {
-            return $this->params["region-id"] ; }
-        $question = 'Enter Region ID for this Server Group';
-        return self::askForInput($question, true);
-    }
-
-    private function getServerGroupBoxAmount() {
+    protected function getServerGroupBoxAmount() {
         if (isset($this->params["box-amount"])) {
             return $this->params["box-amount"] ; }
         $question = 'Enter number of boxes to add to Environment';
         return self::askForInput($question, true);
     }
 
-    private function getUsernameOfBox($boxName = null) {
+    protected function getUsernameOfBox($boxName = null) {
         if (isset($this->params["box-user-name"])) {
             return $this->params["box-user-name"] ; }
         if (isset($this->params["box-username"])) {
@@ -126,7 +119,7 @@ class RackspaceBoxAdd extends BaseRackspaceAllOS {
         return $this->params["box-user-name"] ;
     }
 
-    private function getSSHKeyLocation() {
+    protected function getSSHKeyLocation() {
         if (isset($this->params["private-ssh-key-path"])) {
             return $this->params["private-ssh-key-path"] ; }
         $question = 'Enter file path of private SSH Key';
@@ -134,23 +127,32 @@ class RackspaceBoxAdd extends BaseRackspaceAllOS {
         return $this->params["private-ssh-key-path"] ;
     }
 
-    private function getNewServerFromRackspace($serverData) {
-        $callVars = array() ;
-        $callVars["name"] = $serverData["name"];
-        $callVars["size_id"] = $serverData["sizeID"];
-        $callVars["image_id"] = $serverData["imageID"];
-        $callVars["region_id"] = $serverData["regionID"];
-        $callVars["ssh_key_ids"] = $this->getAllSshKeyIdsString();
-        $curlUrl = "https://api.rackspace.com/v1/servers/new" ;
-        $callOut = $this->rackspaceCall($callVars, $curlUrl);
+    protected function getNewServerFromRackspace($serverData) {
+        $compute = $this->rackspaceClient->computeService('cloudServersOpenStack', $serverData["regionID"]);
+        $server = $compute->server();
+        try {
+            $response = $server->create(array(
+                'name'     => $serverData["name"],
+                'image'    => $compute->image($serverData["imageID"]),
+                'flavor'   => $compute->flavor($serverData["sizeID"]),
+                'networks' => array(
+                    $compute->network(Network::RAX_PUBLIC),
+                    $compute->network(Network::RAX_PRIVATE) ) ) ); }
+        catch (\Guzzle\Http\Exception\BadResponseException $e) {
+            // No! Something failed. Let's find out:
+            $responseBody = (string) $e->getResponse()->getBody();
+            $statusCode   = $e->getResponse()->getStatusCode();
+            $headers      = $e->getResponse()->getHeaderLines();
+            echo sprintf("Status: %s\nBody: %s\nHeaders: %s", $statusCode, $responseBody, implode(', ', $headers)); }
+        $callOut = $response ;
         $loggingFactory = new \Model\Logging();
         $logging = $loggingFactory->getModel($this->params);
-        $logging->log("Request for {$callVars["name"]} complete") ;
+        $logging->log("Request for {$serverData["name"]} complete") ;
         return $callOut ;
     }
 
-    private function addServerToPapyrus($envName, $data) {
-        $serverData = $this->getDropletData($data->server->id);
+    protected function addServerToPapyrus($envName, $data) {
+        $serverData = $this->getServerData($data->server->id);
         if (!isset($serverData->ip_address) && isset($this->params["wait-for-box-info"])) {
             $serverData = $this->waitForBoxInfo($data->server->id); }
         if (($serverData->status != "active") && isset($this->params["wait-until-active"])) {
@@ -173,48 +175,20 @@ class RackspaceBoxAdd extends BaseRackspaceAllOS {
         \Model\AppConfig::setProjectVariable("environments", $environments);
     }
 
-    private function getAllSshKeyIdsString() {
-        if (isset($this->params["ssh-key-ids"])) {
-            return $this->params["ssh-key-ids"] ; }
-        $curlUrl = "https://api.rackspace.com/v1/ssh_keys" ;
-        $sshKeysObject =  $this->rackspaceCall(array(), $curlUrl);
-        $sshKeys = array();
-        // @todo use the list call to get ids, this uses name
-        foreach($sshKeysObject->ssh_keys as $sshKey) {
-            $sshKeys[] = $sshKey->id ; }
-        $keysString = implode(",", $sshKeys) ;
-        return $keysString;
-    }
-
-    private function getDropletData($serverId) {
+    protected function getServerData($serverId) {
         $curlUrl = "https://api.rackspace.com/v1/servers/$serverId" ;
         $serverObject =  $this->rackspaceCall(array(), $curlUrl);
         return $serverObject;
     }
 
-    private function waitForBoxInfo($serverId) {
-        $maxWaitTime = (isset($this->params["max-box-info-wait-time"])) ? $this->params["max-box-info-wait-time"] : "300" ;
-        $i2 = 1 ;
-        for($i=0; $i<=$maxWaitTime; $i=$i+10){
-            $loggingFactory = new \Model\Logging();
-            $logging = $loggingFactory->getModel($this->params);
-            $logging->log("Attempt $i2 for server $serverId box info...") ;
-            $serverData = $this->getDropletData($serverId);
-            if (isset($serverData->server->ip_address)) {
-                return $serverData ; }
-            sleep (10);
-            $i2++; }
-        return null;
-    }
-
-    private function waitUntilActive($serverId) {
+    protected function waitUntilActive($serverId) {
         $maxWaitTime = (isset($this->params["max-active-wait-time"])) ? $this->params["max-active-wait-time"] : "300" ;
         $i2 = 1 ;
         for($i=0; $i<=$maxWaitTime; $i=$i+10){
             $loggingFactory = new \Model\Logging();
             $logging = $loggingFactory->getModel($this->params);
             $logging->log("Attempt $i2 for server $serverId to become active...") ;
-            $serverData = $this->getDropletData($serverId);
+            $serverData = $this->getServerData($serverId);
             if (isset($serverData->server->status) && $serverData->server->status=="active") {
                 return $serverData ; }
             sleep (10);
