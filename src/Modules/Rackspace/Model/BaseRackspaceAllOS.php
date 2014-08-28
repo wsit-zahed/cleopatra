@@ -19,7 +19,15 @@ class BaseRackspaceAllOS extends Base {
 
     protected $username ;
     protected $apiKey ;
+    protected $region ;
     protected $rackspaceClient ;
+
+    protected function initialiseRackspace() {
+        $this->apiKey = $this->askForRackspaceAPIKey();
+        $this->username = $this->askForRackspaceUsername();
+        $this->region = $this->askForRackspaceRegion();
+        $this->getClient();
+    }
 
     protected function askForRackspaceAPIKey(){
         if (isset($this->params["rackspace-api-key"])) { return $this->params["rackspace-api-key"] ; }
@@ -58,15 +66,43 @@ class BaseRackspaceAllOS extends Base {
         return self::askForInput($question, true);
     }
 
+    protected function askForRackspaceRegion(){
+        if (isset($this->params["rackspace-region"])) { return $this->params["rackspace-region"] ; }
+        $papyrusVar = \Model\AppConfig::getProjectVariable("rackspace-region") ;
+        if ($papyrusVar != null) {
+            if ($this->params["guess"] == true) { return $papyrusVar ; }
+            if ($this->params["use-project-region"] == true) { return $papyrusVar ; }
+            $question = 'Use Project saved Rackspace Region?';
+            if (self::askYesOrNo($question, true) == true) {
+                return $papyrusVar ; } }
+        $appVar = \Model\AppConfig::getProjectVariable("rackspace-region") ;
+        if ($appVar != null) {
+            $question = 'Use Application saved Rackspace Region?';
+            if (self::askYesOrNo($question, true) == true) {
+                return $appVar ; } }
+        $question = 'Enter Rackspace Region';
+        return self::askForInput($question, true);
+    }
+
     protected function getClient() {
-
-        require dirname(__DIR__) . 'vendor/autoload.php';
-
+        require dirname(__DIR__) . '/Libraries/vendor/autoload.php';
         // 1. Instantiate a Rackspace client.
-        $this->rackspaceClient = new Rackspace(Rackspace::US_IDENTITY_ENDPOINT, array(
-            'username' => getenv('RAX_USERNAME'),
-            'apiKey'   => getenv('RAX_API_KEY')
+        \Model\AppConfig::setProjectVariable("rackspace-user-name", $this->username) ;
+        \Model\AppConfig::setProjectVariable("rackspace-api-key", $this->apiKey) ;
+        \Model\AppConfig::setProjectVariable("rackspace-region", $this->region) ;
+        $this->rackspaceClient = new \OpenCloud\Rackspace(\OpenCloud\Rackspace::UK_IDENTITY_ENDPOINT, array(
+            'username' => $this->username,
+            'apiKey'   => $this->apiKey
         ));
+    }
+
+    protected function getServerGroupRegionID() {
+        if (isset($this->params["region-id"])) {
+            return $this->params["region-id"] ; }
+        if (isset($this->params["guess"])) {
+            return $this->region ; }
+        $question = 'Enter Region ID for this Server Group';
+        return self::askForInput($question, true);
     }
 
 }
