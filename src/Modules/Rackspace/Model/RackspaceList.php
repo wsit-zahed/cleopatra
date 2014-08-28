@@ -24,31 +24,38 @@ class RackspaceList extends BaseRackspaceAllOS {
 
     protected function performRackspaceListData(){
         if ($this->askForListExecute() != true) { return false; }
-        $this->apiKey = $this->askForRackspaceAPIKey();
-        $this->username = $this->askForRackspaceUsername();
+        $this->initialiseRackspace() ;
         $dataToList = $this->askForDataTypeToList();
         return $this->getDataListFromRackspace($dataToList);
     }
 
-    private function askForListExecute(){
+    private function askForListExecute() {
         if (isset($this->params["yes"]) && $this->params["yes"]==true) { return true ; }
         $question = 'List Data?';
         return self::askYesOrNo($question);
     }
 
-    private function askForDataTypeToList(){
+    private function askForDataTypeToList() {
         $question = 'Please choose a data type to list:';
-        $options = array("servers", "sizes", "images", "domains", "regions", "ssh_keys");
+        // $options = array("servers", "sizes", "images", "domains", "regions", "ssh_keys");
+        $options = array("servers", "sizes", "images") ;
         if (isset($this->params["rackspace-list-data-type"]) &&
             in_array($this->params["rackspace-list-data-type"], $options)) {
             return $this->params["rackspace-list-data-type"] ; }
         return self::askForArrayOption($question, $options, true);
     }
 
-    public function getDataListFromRackspace($dataToList){
-        $callVars = array();
-        $curlUrl = "https://api.rackspace.com/v1/$dataToList/" ;
-        return $this->rackspaceCall($callVars, $curlUrl);
+    public function getDataListFromRackspace($dataToList) {
+        if ($dataToList == "images") {
+            $compute = $this->rackspaceClient->computeService('cloudServersOpenStack', $this->region);
+            $list = $compute->imageList(); }
+        if ($dataToList == "servers") {
+            $compute = $this->rackspaceClient->computeService('cloudServersOpenStack', $this->region);
+            $list = $compute->serverList(); }
+        if ($dataToList == "sizes") {
+            $compute = $this->rackspaceClient->computeService('cloudServersOpenStack', $this->region);
+            $list = $compute->flavorList(); }
+        return array($dataToList => $list);
     }
 
 }
