@@ -13,7 +13,7 @@ class RackspaceInfo extends CleopatraBase {
     }
 
     public function routesAvailable() {
-      return array( "Rackspace" => array_merge(parent::routesAvailable(), array("save-ssh-key",
+      return array( "Rackspace" => array_merge(parent::routesAvailable(), array("save-ssh-key", "sshkey", "ssh-key",
           "box-add", "box-remove", "box-destroy", "box-destroy-all", "list") ) );
     }
 
@@ -46,7 +46,7 @@ class RackspaceInfo extends CleopatraBase {
         Will destroy all boxes in your Rackspace account - Careful - its irreversible
         example: cleopatra rackspace box-destroy-all --yes --guess
 
-        - save-ssh-key
+        - save-ssh-key, sshkey, ssh-key
         Will let you save a local ssh key to your Rackspace account, so you can ssh in to your nodes with it
         securely and without a password
         example: cleopatra rackspace save-ssh-key
