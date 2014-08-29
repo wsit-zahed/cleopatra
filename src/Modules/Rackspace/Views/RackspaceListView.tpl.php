@@ -10,15 +10,19 @@ if (is_array($pageVars["rackspaceResult"])) {
         foreach($pageVars["rackspaceResult"][$resultKey] as $serverEntry) {
             $outVar .= "id - ".$serverEntry->id.", ";
             $outVar .= "name - ".$serverEntry->name.", ";
-            $outVar .= "image_id - ".$serverEntry->image_id.", ";
-            $outVar .= "size_id - ".$serverEntry->size_id.", ";
-            $outVar .= "region_id - ".$serverEntry->region_id.", ";
-            $outVar .= "backups_active - ".$serverEntry->backups_active.", ";
-            $outVar .= "ip_address - ".$serverEntry->ip_address.", ";
-            $outVar .= "private_ip_address - ".$serverEntry->private_ip_address.", ";
-            $outVar .= "locked - ".$serverEntry->locked.", ";
             $outVar .= "status - ".$serverEntry->status.", ";
-            $outVar .= "created_at - ".$serverEntry->created_at;
+            $outVar .= "image_id - ".$serverEntry->image->id.", ";
+            $outVar .= "flavor - ".$serverEntry->flavor->id.", ";
+            // $outVar .= "region - ".$serverEntry->region.", ";
+            // $outVar .= "backups_active - ".$serverEntry->backups_active.", ";
+            foreach (array("public", "private") as $scope) {
+                $ix = 0 ;
+                $ads = $serverEntry->addresses->$scope ;
+                for ($i = 0 ; $i<count($ads) ; $i++) {
+                    if ($ads[$i]->version == 4) {
+                        $outVar .= "{$scope}_ip_address_$ix - ".$ads[$i]->addr.", ";
+                        $ix++; } } }
+            $outVar .= "created - ".$serverEntry->created ;
             $outVar .= "\n" ; } }
     else if ($resultKey == "sizes") {
         foreach($pageVars["rackspaceResult"][$resultKey] as $sizeEntry) {
