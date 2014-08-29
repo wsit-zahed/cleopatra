@@ -21,8 +21,7 @@ class RackspaceBoxDestroy extends BaseRackspaceAllOS {
 
     public function destroyBox() {
         if ($this->askForOverwriteExecute() != true) { return false; }
-        $this->apiKey = $this->askForRackspaceAPIKey();
-        $this->username = $this->askForRackspaceUsername();
+        $this->initialiseRackspace();
         $environments = \Model\AppConfig::getProjectVariable("environments");
         $workingEnvironment = $this->getWorkingEnvironment();
 
@@ -84,14 +83,13 @@ class RackspaceBoxDestroy extends BaseRackspaceAllOS {
     }
 
     private function destroyServerFromRackspace($serverData) {
-        $callVars = array() ;
-        $callVars["server_id"] = $serverData["serverID"];
-        $curlUrl = "https://api.rackspace.com/v1/servers/{$callVars["server_id"]}/destroy" ;
-        $callOut = $this->rackspaceCall($callVars, $curlUrl);
+        $compute = $this->rackspaceClient->computeService('cloudServersOpenStack', $this->getServerGroupRegionID());
+        $server = $compute->server($serverData["serverID"]);
+        $server->delete();
         $loggingFactory = new \Model\Logging();
         $logging = $loggingFactory->getModel($this->params);
-        $logging->log("Request for destroying Droplet {$callVars["server_id"]} complete") ;
-        return $callOut ;
+        $logging->log("Request for destroying Server {$serverData["serverID"]} complete") ;
+        return $server ;
     }
 
     private function deleteServerFromPapyrus($workingEnvironment, $serverId) {
