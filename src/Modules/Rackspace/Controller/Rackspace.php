@@ -37,7 +37,7 @@ class Rackspace extends Base {
             $this->content["rackspaceResult"] = $thisModel->destroyAllBoxes();
             return array ("type"=>"view", "view"=>"rackspaceAPI", "pageVars"=>$this->content); }
 
-        if ($action=="save-ssh-key") {
+        if (in_array($action, array("save-ssh-key", "sshkey", "ssh-key"))) {
             $thisModel = $this->getModelAndCheckDependencies(substr(get_class($this), 11), $pageVars, "SshKey") ;
             if (is_array($thisModel)) { return $this->failDependencies($pageVars, $this->content, $thisModel) ; }
             $this->content["rackspaceResult"] = $thisModel->performRackspaceSaveSshKey();
