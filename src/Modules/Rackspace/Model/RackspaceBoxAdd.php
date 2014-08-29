@@ -2,6 +2,7 @@
 
 Namespace Model;
 use OpenCloud\Compute\Constants\Network;
+use OpenCloud\Compute\Constants\ServerState;
 
 class RackspaceBoxAdd extends BaseRackspaceAllOS {
 
@@ -57,7 +58,6 @@ class RackspaceBoxAdd extends BaseRackspaceAllOS {
                                 ? $serverData["prefix"].'-'.$serverData["envName"].'-'.$serverData["sCount"]
                                 : $serverData["envName"].'-'.$serverData["sCount"] ;
                             $response = $this->getNewServerFromRackspace($serverData) ;
-                            // var_dump("response", $response) ;
                             $this->addServerToPapyrus($envName, $response); } } } }
 
                 return true ; }
@@ -131,7 +131,7 @@ class RackspaceBoxAdd extends BaseRackspaceAllOS {
         $compute = $this->rackspaceClient->computeService('cloudServersOpenStack', $serverData["regionID"]);
         $server = $compute->server();
         try {
-            $response = $server->create(array(
+            $server->create(array(
                 'name'     => $serverData["name"],
                 'image'    => $compute->image($serverData["imageID"]),
                 'flavor'   => $compute->flavor($serverData["sizeID"]),
@@ -144,56 +144,48 @@ class RackspaceBoxAdd extends BaseRackspaceAllOS {
             $statusCode   = $e->getResponse()->getStatusCode();
             $headers      = $e->getResponse()->getHeaderLines();
             echo sprintf("Status: %s\nBody: %s\nHeaders: %s", $statusCode, $responseBody, implode(', ', $headers)); }
-        $callOut = $response ;
         $loggingFactory = new \Model\Logging();
         $logging = $loggingFactory->getModel($this->params);
         $logging->log("Request for {$serverData["name"]} complete") ;
-        return $callOut ;
+        return $server ;
     }
 
-    protected function addServerToPapyrus($envName, $data) {
-        $serverData = $this->getServerData($data->server->id);
-        if (!isset($serverData->ip_address) && isset($this->params["wait-for-box-info"])) {
-            $serverData = $this->waitForBoxInfo($data->server->id); }
-        if (($serverData->status != "active") && isset($this->params["wait-until-active"])) {
-            $serverData = $this->waitUntilActive($data->server->id); }
-        $server = array();
-        $server["target"] = $serverData->server->ip_address;
+    protected function addServerToPapyrus($envName, $serverData) {
+        if (isset($this->params["wait-until-active"])) {
+            $serverData = $this->waitUntilActive($serverData); }
+        var_dump($serverData);
+
+        $server["target"] = $serverData->addresses->public[0]->addr;
         $server["user"] = $this->getUsernameOfBox() ;
         $server["password"] = $this->getSSHKeyLocation() ;
         $server["provider"] = "Rackspace";
-        $server["id"] = $data->server->id;
-        $server["name"] = $data->server->name;
-        // file_put_contents("/tmp/outloc", getcwd()) ;
-        // file_put_contents("/tmp/outsrv", $server) ;
+        $server["id"] = $serverData->id;
+        $server["name"] = $serverData->name;
         $environments = \Model\AppConfig::getProjectVariable("environments");
-        // file_put_contents("/tmp/outenv1", serialize($environments)) ;
         for ($i= 0 ; $i<count($environments); $i++) {
             if ($environments[$i]["any-app"]["gen_env_name"] == $envName) {
                 $environments[$i]["servers"][] = $server; } }
-        // file_put_contents("/tmp/outenv2", serialize($environments)) ;
         \Model\AppConfig::setProjectVariable("environments", $environments);
     }
 
-    protected function getServerData($serverId) {
-        $curlUrl = "https://api.rackspace.com/v1/servers/$serverId" ;
-        $serverObject =  $this->rackspaceCall(array(), $curlUrl);
-        return $serverObject;
-    }
-
-    protected function waitUntilActive($serverId) {
+    protected function waitUntilActive($server) {
+        $compute = $this->rackspaceClient->computeService('cloudServersOpenStack', $this->getServerGroupRegionID());
+        $server = $compute->server($server->id);
         $maxWaitTime = (isset($this->params["max-active-wait-time"])) ? $this->params["max-active-wait-time"] : "300" ;
-        $i2 = 1 ;
-        for($i=0; $i<=$maxWaitTime; $i=$i+10){
-            $loggingFactory = new \Model\Logging();
-            $logging = $loggingFactory->getModel($this->params);
-            $logging->log("Attempt $i2 for server $serverId to become active...") ;
-            $serverData = $this->getServerData($serverId);
-            if (isset($serverData->server->status) && $serverData->server->status=="active") {
-                return $serverData ; }
-            sleep (10);
-            $i2++; }
-        return null;
+        $callback = function($server) {
+            if (!empty($server->error)) {
+                var_dump($server->error);
+                exit; }
+            else {
+                $loggingFactory = new \Model\Logging();
+                $logging = $loggingFactory->getModel($this->params);
+                $logging->log (sprintf(
+                    "Waiting on %s/%-12s %4s%%",
+                    $server->name(),
+                    $server->status(),
+                    isset($server->progress) ? $server->progress : 0 ) ) ; } };
+        $server->waitFor(ServerState::ACTIVE, $maxWaitTime, $callback);
+        return $server;
     }
 
 }
