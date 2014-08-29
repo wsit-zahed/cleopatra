@@ -130,6 +130,8 @@ class RackspaceBoxAdd extends BaseRackspaceAllOS {
     protected function getNewServerFromRackspace($serverData) {
         $compute = $this->rackspaceClient->computeService('cloudServersOpenStack', $serverData["regionID"]);
         $server = $compute->server();
+        $loggingFactory = new \Model\Logging();
+        $logging = $loggingFactory->getModel($this->params);
         try {
             $server->create(array(
                 'name'     => $serverData["name"],
@@ -137,17 +139,16 @@ class RackspaceBoxAdd extends BaseRackspaceAllOS {
                 'flavor'   => $compute->flavor($serverData["sizeID"]),
                 'networks' => array(
                     $compute->network(Network::RAX_PUBLIC),
-                    $compute->network(Network::RAX_PRIVATE) ) ) ); }
+                    $compute->network(Network::RAX_PRIVATE) ) ) );
+            $logging->log("Request for {$serverData["name"]} complete") ;
+            return $server ; }
         catch (\Guzzle\Http\Exception\BadResponseException $e) {
             // No! Something failed. Let's find out:
             $responseBody = (string) $e->getResponse()->getBody();
             $statusCode   = $e->getResponse()->getStatusCode();
             $headers      = $e->getResponse()->getHeaderLines();
-            echo sprintf("Status: %s\nBody: %s\nHeaders: %s", $statusCode, $responseBody, implode(', ', $headers)); }
-        $loggingFactory = new \Model\Logging();
-        $logging = $loggingFactory->getModel($this->params);
-        $logging->log("Request for {$serverData["name"]} complete") ;
-        return $server ;
+            $logging->log(sprintf("Status: %s\nBody: %s\nHeaders: %s", $statusCode, $responseBody, implode(', ', $headers))) ;
+            return null ; }
     }
 
     protected function addServerToPapyrus($envName, $serverData) {

@@ -23,11 +23,8 @@ class RackspaceSshKey extends BaseRackspaceAllOS {
     }
 
     public function performRackspaceSaveSshKey() {
-        var_dump($this->params) ;
         if ($this->askForSSHKeyExecute() != true) { return false; }
-        $this->username = $this->askForRackspaceUsername();
-        $this->apiKey = $this->askForRackspaceAPIKey();
-        $this->getClient();
+        $this->initialiseRackspace();
         $fileLocation = $this->askForSSHKeyPublicFileLocation();
         $fileData = file_get_contents($fileLocation);
         $keyName = $this->askForSSHKeyNameForRackspace();
@@ -41,33 +38,41 @@ class RackspaceSshKey extends BaseRackspaceAllOS {
     }
 
     private function askForSSHKeyPublicFileLocation() {
-        if (isset($this->params["rackspace-ssh-key-path"]) && $this->params["rackspace-ssh-key-path"]==true) {
-            return $this->params["rackspace-ssh-key-path"] ; }
+        if (isset($this->params["key-path"]) && $this->params["key-path"]==true) {
+            return $this->params["key-path"] ; }
         $question = 'Enter Location of ssh public key file to upload';
         return self::askForInput($question, true);
     }
 
     private function askForSSHKeyNameForRackspace(){
-        if (isset($this->params["rackspace-ssh-key-name"]) && $this->params["rackspace-ssh-key-name"]==true) {
-            return $this->params["rackspace-ssh-key-name"] ; }
+        if (isset($this->params["key-name"]) && $this->params["key-name"]==true) {
+            return $this->params["key-name"] ; }
         $question = 'Enter name to store ssh key under on Rackspace';
         return self::askForInput($question, true);
     }
 
     public function saveSshKeyToRackspace($keyData, $keyName){
-        $keyData = str_replace("\n", "", $keyData);
-        // 2. Create Compute service object
-        $region = 'ORD';
-        $service = $this->rackspaceClient->computeService(null, $region);
+        $loggingFactory = new \Model\Logging();
+        $logging = $loggingFactory->getModel($this->params);
+        $service = $this->rackspaceClient->computeService(null, $this->getServerGroupRegionID());
         // 3. Get empty keypair
         $keypair = $service->keypair();
         // 4. Create
-        $keypair->create(array(
-            'name'      => $keyName,
-            'publicKey' => $keyData
-        ));
-        // @todo check if it actually worked
-        return true ;
+        try {
+            $keypair->create(array(
+                'name'      => $keyName,
+                'publicKey' => $keyData
+            ));
+            // @todo check if it actually worked
+            $logging->log("Request for Key $keyName complete") ;
+            return true ; }
+        catch (\Guzzle\Http\Exception\BadResponseException $e) {
+            // No! Something failed. Let's find out:
+            $responseBody = (string) $e->getResponse()->getBody();
+            $statusCode   = $e->getResponse()->getStatusCode();
+            $headers      = $e->getResponse()->getHeaderLines();
+            $logging->log(sprintf("Status: %s\nBody: %s\nHeaders: %s", $statusCode, $responseBody, implode(', ', $headers))) ;
+            return null ; }
     }
 
 }

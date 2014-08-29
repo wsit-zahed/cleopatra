@@ -85,11 +85,19 @@ class RackspaceBoxDestroy extends BaseRackspaceAllOS {
     private function destroyServerFromRackspace($serverData) {
         $compute = $this->rackspaceClient->computeService('cloudServersOpenStack', $this->getServerGroupRegionID());
         $server = $compute->server($serverData["serverID"]);
-        $server->delete();
         $loggingFactory = new \Model\Logging();
         $logging = $loggingFactory->getModel($this->params);
-        $logging->log("Request for destroying Server {$serverData["serverID"]} complete") ;
-        return $server ;
+        try {
+            $server->delete();
+            $logging->log("Request for destroying Server {$serverData["serverID"]} complete") ;
+            return $server ; }
+        catch (\Guzzle\Http\Exception\BadResponseException $e) {
+            // No! Something failed. Let's find out:
+            $responseBody = (string) $e->getResponse()->getBody();
+            $statusCode   = $e->getResponse()->getStatusCode();
+            $headers      = $e->getResponse()->getHeaderLines();
+            $logging->log(sprintf("Status: %s\nBody: %s\nHeaders: %s", $statusCode, $responseBody, implode(', ', $headers))) ;
+            return null ; }
     }
 
     private function deleteServerFromPapyrus($workingEnvironment, $serverId) {
