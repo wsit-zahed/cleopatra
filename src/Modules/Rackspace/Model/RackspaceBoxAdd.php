@@ -78,8 +78,6 @@ class RackspaceBoxAdd extends BaseRackspaceAllOS {
                 $command .= ' --ssh-key-name='.$this->getSSHKeyName().' --private-ssh-key-path='.$this->getSSHKeyLocation() ;
                 $command .= ' --wait-until-active --max-active-wait-time='.$this->getMaxWaitTime().' ' ;
                 $command .= ' --force-name='.$force_name.' "' ; }
-            echo $command ;
-            error_log($command) ;
             $this->executeAndOutput($command) ; }
         else {
             for ($i = 0; $i < $this->getServerGroupBoxAmount(); $i++) {
