@@ -84,9 +84,17 @@ class RackspaceBoxDestroy extends BaseRackspaceAllOS {
 
     private function destroyServerFromRackspace($serverData) {
         $compute = $this->rackspaceClient->computeService('cloudServersOpenStack', $this->getServerGroupRegionID());
-        $server = $compute->server($serverData["serverID"]);
         $loggingFactory = new \Model\Logging();
         $logging = $loggingFactory->getModel($this->params);
+        try {
+            $server = $compute->server($serverData["serverID"]); }
+        catch (\Guzzle\Http\Exception\BadResponseException $e) {
+            $responseBody = (string) $e->getResponse()->getBody();
+            $statusCode   = $e->getResponse()->getStatusCode();
+            $headers      = $e->getResponse()->getHeaderLines();
+            $name = (isset($serverData["name"])) ? $serverData["name"] : "server" ;
+            $logging->log("Failed destroying {$name}:\n".sprintf("Status: %s\nBody: %s\nHeaders: %s", $statusCode, $responseBody, implode(', ', $headers))) ;
+            return null ; }
         try {
             $server->delete();
             $logging->log("Request for destroying Server {$serverData["serverID"]} complete") ;
@@ -96,7 +104,7 @@ class RackspaceBoxDestroy extends BaseRackspaceAllOS {
             $responseBody = (string) $e->getResponse()->getBody();
             $statusCode   = $e->getResponse()->getStatusCode();
             $headers      = $e->getResponse()->getHeaderLines();
-            $logging->log(sprintf("Status: %s\nBody: %s\nHeaders: %s", $statusCode, $responseBody, implode(', ', $headers))) ;
+            $logging->log("Failed destroying {$serverData["name"]}:\n".sprintf("Status: %s\nBody: %s\nHeaders: %s", $statusCode, $responseBody, implode(', ', $headers))) ;
             return null ; }
     }
 

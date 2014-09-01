@@ -23,7 +23,6 @@ class RackspaceBoxAdd extends BaseRackspaceAllOS {
     public function addBox() {
         if ($this->askForBoxAddExecute() != true) { return false; }
         $this->initialiseRackspace();
-        $serverPrefix = $this->getServerPrefix();
         $environments = \Model\AppConfig::getProjectVariable("environments");
         $workingEnvironment = $this->getWorkingEnvironment();
 
@@ -46,24 +45,61 @@ class RackspaceBoxAdd extends BaseRackspaceAllOS {
                         $addToThisEnvironment = self::askYesOrNo($question); }
 
                     if ($addToThisEnvironment == true) {
-                        for ($i = 0; $i < $this->getServerGroupBoxAmount(); $i++) {
-                            $serverData = array();
-                            $serverData["prefix"] = $serverPrefix ;
-                            $serverData["envName"] = $envName ;
-                            $serverData["sCount"] = $i ;
-                            $serverData["sizeID"] = $this->getServerGroupSizeID() ;
-                            $serverData["imageID"] = $this->getServerGroupImageID() ;
-                            $serverData["regionID"] = $this->getServerGroupRegionID() ;
-                            $serverData["name"] = (isset( $serverData["prefix"]) && strlen( $serverData["prefix"])>0)
-                                ? $serverData["prefix"].'-'.$serverData["envName"].'-'.$serverData["sCount"]
-                                : $serverData["envName"].'-'.$serverData["sCount"] ;
-                            $response = $this->getNewServerFromRackspace($serverData) ;
-                            $this->addServerToPapyrus($envName, $response); } } } }
+                        $this->createAllBoxes($envName) ;} } }
 
                 return true ; }
         else {
             \Core\BootStrap::setExitCode(1) ;
             $logging->log("The environment $workingEnvironment does not exist.") ; }
+    }
+
+    protected function createAllBoxes ($envName) {
+        $serverPrefix = $this->getServerPrefix();
+        if (isset($this->params["parallax"])) {
+            $command  = 'cleopatra parallax cli --yes --guess ';
+            for ($i = 0; $i < $this->getServerGroupBoxAmount(); $i++) {
+                $serverData = array();
+                $serverData["sCount"] = $i ;
+                if (isset($this->params["force-name"])) {
+                    $serverData["name"] = $this->params["force-name"] ; }
+                else {
+                    $serverData["name"] = (isset( $serverData["prefix"]) && strlen( $serverData["prefix"])>0)
+                        ? $serverData["prefix"].'-'.$envName
+                        : $envName ;
+                    if (isset( $serverData["suffix"]) && strlen( $serverData["suffix"])>0) {
+                        $serverData["name"] .= '-'.$serverData["suffix"] ; }
+                    $serverData["name"] .= '-'.$serverData["sCount"] ; }
+                $force_name = $serverData["name"] ;
+                $command .= ' --command-'.($i+1).'="cleopatra boxify box-add --guess --yes ' ;
+                $command .= ' --environment-name='.$envName.' --provider-name=Rackspace ' ;
+                $command .= ' --box-amount=1 --image-id='.$this->getServerGroupImageID() ;
+                $command .= ' --region-id='.$this->getServerGroupRegionID().' --size-id='.$this->getServerGroupSizeID() ;
+                $command .= ' --server-prefix='.$serverPrefix.' --box-user-name='.$this->getUsernameOfBox() ;
+                $command .= ' --ssh-key-name='.$this->getSSHKeyName().' --private-ssh-key-path='.$this->getSSHKeyLocation() ;
+                $command .= ' --wait-until-active --max-active-wait-time='.$this->getMaxWaitTime().' ' ;
+                $command .= ' --force-name='.$force_name.' "' ; }
+            echo $command ;
+            error_log($command) ;
+            $this->executeAndOutput($command) ; }
+        else {
+            for ($i = 0; $i < $this->getServerGroupBoxAmount(); $i++) {
+                $serverData = array();
+                $serverData["prefix"] = $serverPrefix ;
+                $serverData["sCount"] = $i ;
+                $serverData["sizeID"] = $this->getServerGroupSizeID() ;
+                $serverData["imageID"] = $this->getServerGroupImageID() ;
+                $serverData["regionID"] = $this->getServerGroupRegionID() ;
+                if (isset($this->params["force-name"])) {
+                    $serverData["name"] = $this->params["force-name"] ; }
+                else {
+                    $serverData["name"] = (isset( $serverData["prefix"]) && strlen( $serverData["prefix"])>0)
+                        ? $serverData["prefix"].'-'.$envName
+                        : $envName ;
+                    if (isset( $serverData["suffix"]) && strlen( $serverData["suffix"])>0) {
+                        $serverData["name"] .= '-'.$serverData["suffix"] ; }
+                    $serverData["name"] .= '-'.$serverData["sCount"] ; }
+                $response = $this->getNewServerFromRackspace($serverData) ;
+                $this->addServerToPapyrus($envName, $response); } }
     }
 
     protected function askForBoxAddExecute() {
@@ -84,6 +120,11 @@ class RackspaceBoxAdd extends BaseRackspaceAllOS {
             return $this->params["environment-name"] ; }
         $question = 'Enter Environment to add Servers to';
         return self::askForInput($question);
+    }
+
+    protected function getMaxWaitTime() {
+        if (isset($this->params["max-active-wait-time"])) { return $this->params["max-active-wait-time"] ; }
+        return "300";
     }
 
     protected function getServerGroupImageID() {
@@ -127,19 +168,37 @@ class RackspaceBoxAdd extends BaseRackspaceAllOS {
         return $this->params["private-ssh-key-path"] ;
     }
 
+    protected function getSSHKeyName() {
+        if (isset($this->params["ssh-key-name"])) {
+            return $this->params["ssh-key-name"] ; }
+        $question = 'Enter Rackspace SSH Key Name (Empty for none)';
+        $this->params["ssh-key-name"] = self::askForInput($question, true) ;
+        return $this->params["ssh-key-name"] ;
+    }
+
     protected function getNewServerFromRackspace($serverData) {
         $compute = $this->rackspaceClient->computeService('cloudServersOpenStack', $serverData["regionID"]);
-        $server = $compute->server();
         $loggingFactory = new \Model\Logging();
         $logging = $loggingFactory->getModel($this->params);
         try {
-            $server->create(array(
+            $server = $compute->server(); }
+        catch (\Guzzle\Http\Exception\BadResponseException $e) {
+            $responseBody = (string) $e->getResponse()->getBody();
+            $statusCode   = $e->getResponse()->getStatusCode();
+            $headers      = $e->getResponse()->getHeaderLines();
+            $logging->log("Failed creating {$serverData["name"]}:\n".sprintf("Status: %s\nBody: %s\nHeaders: %s", $statusCode, $responseBody, implode(', ', $headers))) ;
+            return null ; }
+        try {
+            $serverSettings =array(
                 'name'     => $serverData["name"],
                 'image'    => $compute->image($serverData["imageID"]),
                 'flavor'   => $compute->flavor($serverData["sizeID"]),
                 'networks' => array(
                     $compute->network(Network::RAX_PUBLIC),
-                    $compute->network(Network::RAX_PRIVATE) ) ) );
+                    $compute->network(Network::RAX_PRIVATE) ) ) ;
+            if (strlen($this->getSSHKeyName())>0) {
+                $serverSettings = array_merge($serverSettings, array('keypair'  => $this->getSSHKeyName()) ) ; }
+            $server->create($serverSettings);
             $logging->log("Request for {$serverData["name"]} complete") ;
             return $server ; }
         catch (\Guzzle\Http\Exception\BadResponseException $e) {
@@ -147,16 +206,23 @@ class RackspaceBoxAdd extends BaseRackspaceAllOS {
             $responseBody = (string) $e->getResponse()->getBody();
             $statusCode   = $e->getResponse()->getStatusCode();
             $headers      = $e->getResponse()->getHeaderLines();
-            $logging->log(sprintf("Status: %s\nBody: %s\nHeaders: %s", $statusCode, $responseBody, implode(', ', $headers))) ;
+            $logging->log("Failed creating {$serverData["name"]}:\n".sprintf("Status: %s\nBody: %s\nHeaders: %s", $statusCode, $responseBody, implode(', ', $headers))) ;
             return null ; }
     }
 
     protected function addServerToPapyrus($envName, $serverData) {
         if (isset($this->params["wait-until-active"])) {
             $serverData = $this->waitUntilActive($serverData); }
-        var_dump($serverData);
-
-        $server["target"] = $serverData->addresses->public[0]->addr;
+        // @todo this uses the first found public and private V4 IP. should allow specifying if theres more than one
+        foreach ($serverData->addresses->public as $addr) {
+            if ($addr->version=="4") {
+                $server["target"] = $addr->addr ;
+                $server["target_public"] = $addr->addr ;
+                break ; } }
+        foreach ($serverData->addresses->private as $addr) {
+            if ($addr->version=="4") {
+                $server["target_private"] = $addr->addr ;
+                break ; } }
         $server["user"] = $this->getUsernameOfBox() ;
         $server["password"] = $this->getSSHKeyLocation() ;
         $server["provider"] = "Rackspace";
@@ -172,9 +238,9 @@ class RackspaceBoxAdd extends BaseRackspaceAllOS {
     protected function waitUntilActive($server) {
         $compute = $this->rackspaceClient->computeService('cloudServersOpenStack', $this->getServerGroupRegionID());
         $server = $compute->server($server->id);
-        $maxWaitTime = (isset($this->params["max-active-wait-time"])) ? $this->params["max-active-wait-time"] : "300" ;
         $callback = function($server) {
             if (!empty($server->error)) {
+                // @todo change this to logging and and dont exit
                 var_dump($server->error);
                 exit; }
             else {
@@ -185,7 +251,7 @@ class RackspaceBoxAdd extends BaseRackspaceAllOS {
                     $server->name(),
                     $server->status(),
                     isset($server->progress) ? $server->progress : 0 ) ) ; } };
-        $server->waitFor(ServerState::ACTIVE, $maxWaitTime, $callback);
+        $server->waitFor(ServerState::ACTIVE, $this->getMaxWaitTime(), $callback);
         return $server;
     }
 

@@ -46,7 +46,7 @@ class RackspaceAllBoxesDestroy extends BaseRackspaceAllOS {
         $callOut = $this->rackspaceCall($callVars, $curlUrl);
         $loggingFactory = new \Model\Logging();
         $logging = $loggingFactory->getModel($this->params);
-        $logging->log("Request for destroying Droplet {$callVars["server_id"]} complete") ;
+        $logging->log("Request for destroying Server {$callVars["server_id"]} complete") ;
         return $callOut ;
     }
 
