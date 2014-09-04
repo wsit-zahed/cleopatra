@@ -19,7 +19,7 @@ class PhrankinsenseAllLinux extends BasePHPApp {
         $this->autopilotDefiner = "Phrankinsense";
         $this->fileSources = array(
           array(
-            "http://git.pharaoh-tools.com/git/phpengine/phrankinsense.git",
+            "http://git.pharaohtools.com/git/phpengine/phrankinsense.git",
             "phrankinsense",
             null // can be null for none
           )
