@@ -1,4 +1,5 @@
 <?php
+
 if (is_array($pageVars["rackspaceResult"])) {
     $outVar = "" ;
     $resultKeys = array_keys($pageVars["rackspaceResult"]);

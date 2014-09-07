@@ -6,7 +6,7 @@ class RackspaceInfo extends CleopatraBase {
 
     public $hidden = false;
 
-    public $name = "Rackspace/Opencloud Server Management Functions";
+    public $name = "Rackspace/Opencloud Cloud Management Functions";
 
     public function _construct() {
       parent::__construct();
@@ -14,7 +14,8 @@ class RackspaceInfo extends CleopatraBase {
 
     public function routesAvailable() {
       return array( "Rackspace" => array_merge(parent::routesAvailable(), array("save-ssh-key", "sshkey", "ssh-key",
-          "box-add", "box-remove", "box-destroy", "box-destroy-all", "list") ) );
+          "box-add", "box-remove", "box-destroy", "box-destroy-all", "list", "ensure-domain-exists", "ensure-domain-empty",
+          "ensure-record-exists", "ensure-record-empty", "list-records", "list-domains" ) ) );
     }
 
     public function routeAliases() {
@@ -22,6 +23,10 @@ class RackspaceInfo extends CleopatraBase {
     }
 
     public function boxProviderName() {
+        return "Rackspace";
+    }
+
+    public function dnsProviderName() {
         return "Rackspace";
     }
 
