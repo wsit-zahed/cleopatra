@@ -43,7 +43,8 @@ class RackspaceDomain extends BaseRackspaceAllOS {
                 $domainsResult = new \StdClass() ;
                 $domainsResult->status = "already-exists" ;
                 $domainsResult->requested = $this->params["domain-name"] ;
-                $domainsResult->domain = $domain ;
+                $domainsResult->domain_name = $domain->name ;
+                $domainsResult->domain_id = $domain->id ;
                 return $domainsResult ; } }
         // doesn't exist, create it
         $domain = $service->domain();
@@ -55,6 +56,8 @@ class RackspaceDomain extends BaseRackspaceAllOS {
         ));
         $domainsResult = new \StdClass() ;
         $domainsResult->status = "created" ;
+        $domainsResult->domain_name = $domain->name ;
+        $domainsResult->domain_id = $domain->id ;
         $domainsResult->requested = $this->params["domain-name"] ;
         return $domainsResult ;
     }
