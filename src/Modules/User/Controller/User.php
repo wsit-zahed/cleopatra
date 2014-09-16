@@ -20,6 +20,10 @@ class User extends Base {
         if (in_array($action, array("create", "remove", "set-password", "exists", "show-groups", "add-to-group", "remove-from-group") )) {
             $this->content["result"] = $thisModel->askAction($action);
             $this->content["appName"] = $thisModel->programNameInstaller ;
+            $this->content["pageVars"] = $pageVars ;
+            var_dump("1", $pageVars) ;
+            $this->content["params"] = $thisModel->params ;
+            var_dump("2", $this->content["params"]) ;
             return array ("type"=>"view", "view"=>"user", "pageVars"=>$this->content); }
 
     }
