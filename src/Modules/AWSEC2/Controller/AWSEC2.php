@@ -19,7 +19,7 @@ class AWSEC2 extends Base {
             $isDefaultAction = self::checkDefaultActions($pageVars, array(), $thisModel) ;
             if ( is_array($isDefaultAction) ) { return $isDefaultAction; }
             $this->content["awsResult"] = $thisModel->addBox();
-            return array ("type"=>"view", "view"=>"awsAPI", "pageVars"=>$this->content); }
+            return array ("type"=>"view", "view"=>"AWSEC2API", "pageVars"=>$this->content); }
 
         if ($action=="box-remove") {
             $thisModel = $this->getModelAndCheckDependencies(substr(get_class($this), 11), $pageVars, "BoxRemove") ;
@@ -27,7 +27,7 @@ class AWSEC2 extends Base {
             $isDefaultAction = self::checkDefaultActions($pageVars, array(), $thisModel) ;
             if ( is_array($isDefaultAction) ) { return $isDefaultAction; }
             $this->content["awsResult"] = $thisModel->askWhetherToSaveOverwriteCurrent();
-            return array ("type"=>"view", "view"=>"awsAPI", "pageVars"=>$this->content); }
+            return array ("type"=>"view", "view"=>"AWSEC2API", "pageVars"=>$this->content); }
 
         if ($action=="box-destroy") {
             $thisModel = $this->getModelAndCheckDependencies(substr(get_class($this), 11), $pageVars, "BoxDestroy") ;
@@ -35,7 +35,7 @@ class AWSEC2 extends Base {
             $isDefaultAction = self::checkDefaultActions($pageVars, array(), $thisModel) ;
             if ( is_array($isDefaultAction) ) { return $isDefaultAction; }
             $this->content["awsResult"] = $thisModel->destroyBox();
-            return array ("type"=>"view", "view"=>"awsAPI", "pageVars"=>$this->content); }
+            return array ("type"=>"view", "view"=>"AWSEC2API", "pageVars"=>$this->content); }
 
         if ($action=="save-ssh-key") {
             $thisModel = $this->getModelAndCheckDependencies(substr(get_class($this), 11), $pageVars, "SshKey") ;
@@ -43,7 +43,7 @@ class AWSEC2 extends Base {
             $isDefaultAction = self::checkDefaultActions($pageVars, array(), $thisModel) ;
             if ( is_array($isDefaultAction) ) { return $isDefaultAction; }
             $this->content["awsResult"] = $thisModel->askWhetherToSaveSshKey();
-            return array ("type"=>"view", "view"=>"awsAPI", "pageVars"=>$this->content); }
+            return array ("type"=>"view", "view"=>"AWSEC2API", "pageVars"=>$this->content); }
 
         if ($action=="list") {
             $thisModel = $this->getModelAndCheckDependencies(substr(get_class($this), 11), $pageVars, "Listing") ;
@@ -51,7 +51,7 @@ class AWSEC2 extends Base {
             $isDefaultAction = self::checkDefaultActions($pageVars, array(), $thisModel) ;
             if ( is_array($isDefaultAction) ) { return $isDefaultAction; }
             $this->content["awsResult"] = $thisModel->askWhetherToListData();
-            return array ("type"=>"view", "view"=>"awsList", "pageVars"=>$this->content); }
+            return array ("type"=>"view", "view"=>"AWSEC2List", "pageVars"=>$this->content); }
 
         $this->content["messages"][] = "Invalid Amazon Web Services Action";
         return array ("type"=>"control", "control"=>"index", "pageVars"=>$this->content);
