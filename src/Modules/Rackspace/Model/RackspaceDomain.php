@@ -81,7 +81,6 @@ class RackspaceDomain extends BaseRackspaceAllOS {
             if ($dom->name == $this->params["domain-name"]) {
                 // @todo log domain found or exit if not found
                 $domain = $dom; } }
-        var_dump($domain->name) ;
         $records = $domain->recordList();
         foreach ($records as $record) {
             if ($record->type == $this->params["record-type"] &&
