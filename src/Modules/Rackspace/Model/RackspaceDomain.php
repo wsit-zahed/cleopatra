@@ -45,7 +45,9 @@ class RackspaceDomain extends BaseRackspaceAllOS {
                 $domainsResult->requested = $this->params["domain-name"] ;
                 $domainsResult->domain_name = $domain->name ;
                 $domainsResult->domain_id = $domain->id ;
-                return $domainsResult ; } }
+                return $domainsResult ;
+            }
+        }
         // doesn't exist, create it
         $domain = $service->domain();
         $domain->create(array(
@@ -80,7 +82,9 @@ class RackspaceDomain extends BaseRackspaceAllOS {
         foreach ($domains as $dom) {
             if ($dom->name == $this->params["domain-name"]) {
                 // @todo log domain found or exit if not found
-                $domain = $dom; } }
+                $domain = $dom;
+            }
+        }
         $records = $domain->recordList();
         foreach ($records as $record) {
             if ($record->type == $this->params["record-type"] &&
@@ -88,7 +92,9 @@ class RackspaceDomain extends BaseRackspaceAllOS {
                 $record->data == $this->params["record-data"]) {
                 $recordsResult->status = "already-exists" ;
                 $recordsResult->record = $record ;
-                return $recordsResult ; } }
+                return $recordsResult ;
+            }
+        }
         // @todo log creation
         // doesn't exist, create it
         $record = $domain->record(array(
@@ -120,7 +126,9 @@ class RackspaceDomain extends BaseRackspaceAllOS {
         foreach ($domains as $domain) {
             $records = $domain->recordList();
             foreach ($records as $record) {
-                $recordRay[$domain->name][] = $record ; } }
+                $recordRay[$domain->name][] = $record ;
+            }
+        }
         return $recordRay ;
     }
 
@@ -182,7 +190,8 @@ class RackspaceDomain extends BaseRackspaceAllOS {
         if (isset($this->params["domain-comment"])) { return ; }
         if (isset($this->params["guess"])) {
             $this->params["domain-comment"] = "" ;
-            return ; }
+            return ;
+        }
         $question = 'Enter an optional Domain Comment';
         $this->params["domain-comment"] = self::askForInput($question, true);
     }

@@ -41,20 +41,24 @@ class RackspaceList extends BaseRackspaceAllOS {
         $options = array("servers", "sizes", "images") ;
         if (isset($this->params["rackspace-list-data-type"]) &&
             in_array($this->params["rackspace-list-data-type"], $options)) {
-            return $this->params["rackspace-list-data-type"] ; }
+            return $this->params["rackspace-list-data-type"] ;
+        }
         return self::askForArrayOption($question, $options, true);
     }
 
     public function getDataListFromRackspace($dataToList) {
         if ($dataToList == "images") {
             $compute = $this->rackspaceClient->computeService('cloudServersOpenStack', $this->region);
-            $list = $compute->imageList(); }
+            $list = $compute->imageList();
+        }
         if ($dataToList == "servers") {
             $compute = $this->rackspaceClient->computeService('cloudServersOpenStack', $this->region);
-            $list = $compute->serverList(); }
+            $list = $compute->serverList();
+        }
         if ($dataToList == "sizes") {
             $compute = $this->rackspaceClient->computeService('cloudServersOpenStack', $this->region);
-            $list = $compute->flavorList(); }
+            $list = $compute->flavorList();
+        }
         return array($dataToList => $list);
     }
 

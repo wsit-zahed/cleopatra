@@ -27,7 +27,9 @@ class RackspaceBoxDestroy extends BaseRackspaceAllOS {
 
         foreach ($environments as $environment) {
             if (isset($environment["any-app"]["gen_env_name"]) && $environment["any-app"]["gen_env_name"] == $workingEnvironment) {
-                $environmentExists = true ; } }
+                $environmentExists = true ;
+            }
+        }
 
         $loggingFactory = new \Model\Logging();
         $logging = $loggingFactory->getModel($this->params);
@@ -38,10 +40,11 @@ class RackspaceBoxDestroy extends BaseRackspaceAllOS {
                     $envName = $environments[$i]["any-app"]["gen_env_name"];
 
                     if (isset($this->params["yes"]) && $this->params["yes"]==true) {
-                        $removeFromThisEnvironment = true ; }
-                    else {
+                        $removeFromThisEnvironment = true ;
+                    } else {
                         $question = 'Remove Rackspace Server Boxes from '.$envName.'?';
-                        $removeFromThisEnvironment = self::askYesOrNo($question); }
+                        $removeFromThisEnvironment = self::askYesOrNo($question);
+                    }
 
                     if ($removeFromThisEnvironment == true) {
                         if (isset($this->params["destroy-all-boxes"])) {
@@ -51,22 +54,27 @@ class RackspaceBoxDestroy extends BaseRackspaceAllOS {
                                 $serverData["serverID"] = $environments[$i]["servers"][$iBox]["id"] ;
                                 $responses[] = $this->destroyServerFromRackspace($serverData) ;
                                 $this->deleteServerFromPapyrus($workingEnvironment, $serverData["serverID"]); }
-                            return true ; }
-                        else if (isset($this->params["destroy-box-id"])) {
+                            return true ;
+                        } else if (isset($this->params["destroy-box-id"])) {
                             $responses = array();
                             $serverData = array();
                             $serverData["serverID"] = $this->params["destroy-box-id"] ;
                             $responses[] = $this->destroyServerFromRackspace($serverData) ;
                             $this->deleteServerFromPapyrus($workingEnvironment, $serverData["serverID"]);
-                            return true ; }
-                        else {
+                            return true ;
+                        } else {
                             \Core\BootStrap::setExitCode(1) ;
                             $logging->log("You must provide either parameter --destroy-all-boxes or --destroy-box-id");
-                            return false ; } } } }
-            return true ; }
-        else {
+                            return false ;
+                        }
+                    }
+                }
+            }
+            return true ;
+        } else {
             \Core\BootStrap::setExitCode(1) ;
-            $logging->log("The environment $workingEnvironment does not exist.") ; }
+            $logging->log("The environment $workingEnvironment does not exist.");
+        }
     }
 
     private function askForOverwriteExecute() {
