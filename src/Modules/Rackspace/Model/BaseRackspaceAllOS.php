@@ -20,7 +20,7 @@ class BaseRackspaceAllOS extends Base {
     protected $username ;
     protected $apiKey ;
     protected $region ;
-    protected $rackspaceClient ;
+    protected $rackspaceClient;
 
     protected function initialiseRackspace() {
         $this->apiKey = $this->askForRackspaceAPIKey();
@@ -34,16 +34,23 @@ class BaseRackspaceAllOS extends Base {
         $papyrusVar = \Model\AppConfig::getProjectVariable("rackspace-api-key") ;
         if ($papyrusVar != null) {
             if (isset($this->params["guess"])) {
-                return $papyrusVar ; }
+                return $papyrusVar ;
+            }
             if (isset($this->params["use-project-api-key"]) && $this->params["use-project-api-key"] == true) {
-                return $papyrusVar ; }
+                return $papyrusVar ;
+            }
             $question = 'Use Project saved Rackspace API Key?';
-            if (self::askYesOrNo($question, true) == true) { return $papyrusVar ; } }
+            if (self::askYesOrNo($question, true) == true) {
+                return $papyrusVar ;
+            }
+        }
         $appVar = \Model\AppConfig::getProjectVariable("rackspace-api-key") ;
         if ($appVar != null) {
             $question = 'Use Application saved Rackspace API Key?';
             if (self::askYesOrNo($question, true) == true) {
-                return $appVar ; } }
+                return $appVar ;
+            }
+        }
         $question = 'Enter Rackspace API Key';
         return self::askForInput($question, true);
     }
@@ -56,12 +63,16 @@ class BaseRackspaceAllOS extends Base {
             if ($this->params["use-project-user-name"] == true) { return $papyrusVar ; }
             $question = 'Use Project saved Rackspace User Name?';
             if (self::askYesOrNo($question, true) == true) {
-                return $papyrusVar ; } }
+                return $papyrusVar ;
+            }
+        }
         $appVar = \Model\AppConfig::getProjectVariable("rackspace-user-name") ;
         if ($appVar != null) {
             $question = 'Use Application saved Rackspace User Name?';
             if (self::askYesOrNo($question, true) == true) {
-                return $appVar ; } }
+                return $appVar ;
+            }
+        }
         $question = 'Enter Rackspace User Name';
         return self::askForInput($question, true);
     }
@@ -79,7 +90,9 @@ class BaseRackspaceAllOS extends Base {
         if ($appVar != null) {
             $question = 'Use Application saved Rackspace Region?';
             if (self::askYesOrNo($question, true) == true) {
-                return $appVar ; } }
+                return $appVar ;
+            }
+        }
         $question = 'Enter Rackspace Region';
         return self::askForInput($question, true);
     }
@@ -98,9 +111,11 @@ class BaseRackspaceAllOS extends Base {
 
     protected function getServerGroupRegionID() {
         if (isset($this->params["region-id"])) {
-            return $this->params["region-id"] ; }
+            return $this->params["region-id"] ;
+        }
         if (isset($this->params["guess"])) {
-            return $this->region ; }
+            return $this->region ;
+        }
         $question = 'Enter Region ID for this Server Group';
         return self::askForInput($question, true);
     }

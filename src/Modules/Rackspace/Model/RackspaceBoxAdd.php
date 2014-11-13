@@ -28,7 +28,9 @@ class RackspaceBoxAdd extends BaseRackspaceAllOS {
 
         foreach ($environments as $environment) {
             if ($environment["any-app"]["gen_env_name"] == $workingEnvironment) {
-                $environmentExists = true ; } }
+                $environmentExists = true ;
+            }
+        }
 
         $loggingFactory = new \Model\Logging();
         $logging = $loggingFactory->getModel($this->params);
@@ -39,18 +41,22 @@ class RackspaceBoxAdd extends BaseRackspaceAllOS {
                     $envName = $environment["any-app"]["gen_env_name"];
 
                     if (isset($this->params["yes"]) && $this->params["yes"]==true) {
-                        $addToThisEnvironment = true ; }
-                    else {
+                        $addToThisEnvironment = true ;
+                    } else {
                         $question = 'Add Rackspace Server Boxes to '.$envName.'?';
-                        $addToThisEnvironment = self::askYesOrNo($question); }
+                        $addToThisEnvironment = self::askYesOrNo($question);
+                    }
 
                     if ($addToThisEnvironment == true) {
-                        $this->createAllBoxes($envName) ;} } }
-
-                return true ; }
-        else {
+                        $this->createAllBoxes($envName);
+                    }
+                }
+            }
+            return true ;
+        } else {
             \Core\BootStrap::setExitCode(1) ;
-            $logging->log("The environment $workingEnvironment does not exist.") ; }
+            $logging->log("The environment $workingEnvironment does not exist.");
+        }
     }
 
     protected function createAllBoxes ($envName) {
@@ -61,14 +67,16 @@ class RackspaceBoxAdd extends BaseRackspaceAllOS {
                 $serverData = array();
                 $serverData["sCount"] = $i ;
                 if (isset($this->params["force-name"])) {
-                    $serverData["name"] = $this->params["force-name"] ; }
-                else {
+                    $serverData["name"] = $this->params["force-name"] ;
+                } else {
                     $serverData["name"] = (isset( $serverData["prefix"]) && strlen( $serverData["prefix"])>0)
                         ? $serverData["prefix"].'-'.$envName
                         : $envName ;
                     if (isset( $serverData["suffix"]) && strlen( $serverData["suffix"])>0) {
-                        $serverData["name"] .= '-'.$serverData["suffix"] ; }
-                    $serverData["name"] .= '-'.$serverData["sCount"] ; }
+                        $serverData["name"] .= '-'.$serverData["suffix"] ;
+                    }
+                    $serverData["name"] .= '-'.$serverData["sCount"] ;
+                }
                 $force_name = $serverData["name"] ;
                 $command .= ' --command-'.($i+1).'="cleopatra boxify box-add --guess --yes ' ;
                 $command .= ' --environment-name='.$envName.' --provider-name=Rackspace ' ;
@@ -77,9 +85,10 @@ class RackspaceBoxAdd extends BaseRackspaceAllOS {
                 $command .= ' --server-prefix='.$serverPrefix.' --box-user-name='.$this->getUsernameOfBox() ;
                 $command .= ' --ssh-key-name='.$this->getSSHKeyName().' --private-ssh-key-path='.$this->getSSHKeyLocation() ;
                 $command .= ' --wait-until-active --max-active-wait-time='.$this->getMaxWaitTime().' ' ;
-                $command .= ' --force-name='.$force_name.' "' ; }
-            $this->executeAndOutput($command) ; }
-        else {
+                $command .= ' --force-name='.$force_name.' "' ;
+            }
+            $this->executeAndOutput($command) ;
+        } else {
             for ($i = 0; $i < $this->getServerGroupBoxAmount(); $i++) {
                 $serverData = array();
                 $serverData["prefix"] = $serverPrefix ;
@@ -88,16 +97,20 @@ class RackspaceBoxAdd extends BaseRackspaceAllOS {
                 $serverData["imageID"] = $this->getServerGroupImageID() ;
                 $serverData["regionID"] = $this->getServerGroupRegionID() ;
                 if (isset($this->params["force-name"])) {
-                    $serverData["name"] = $this->params["force-name"] ; }
-                else {
+                    $serverData["name"] = $this->params["force-name"] ;
+                } else {
                     $serverData["name"] = (isset( $serverData["prefix"]) && strlen( $serverData["prefix"])>0)
                         ? $serverData["prefix"].'-'.$envName
                         : $envName ;
                     if (isset( $serverData["suffix"]) && strlen( $serverData["suffix"])>0) {
-                        $serverData["name"] .= '-'.$serverData["suffix"] ; }
-                    $serverData["name"] .= '-'.$serverData["sCount"] ; }
+                        $serverData["name"] .= '-'.$serverData["suffix"] ;
+                    }
+                    $serverData["name"] .= '-'.$serverData["sCount"] ;
+                }
                 $response = $this->getNewServerFromRackspace($serverData) ;
-                $this->addServerToPapyrus($envName, $response); } }
+                $this->addServerToPapyrus($envName, $response);
+            }
+        }
     }
 
     protected function askForBoxAddExecute() {
@@ -108,7 +121,8 @@ class RackspaceBoxAdd extends BaseRackspaceAllOS {
 
     protected function getServerPrefix() {
         if (isset($this->params["server-prefix"])) {
-            return $this->params["server-prefix"] ; }
+            return $this->params["server-prefix"] ;
+        }
         $question = 'Enter Prefix for all Servers (None is fine)';
         return self::askForInput($question);
     }
@@ -148,9 +162,11 @@ class RackspaceBoxAdd extends BaseRackspaceAllOS {
 
     protected function getUsernameOfBox($boxName = null) {
         if (isset($this->params["box-user-name"])) {
-            return $this->params["box-user-name"] ; }
+            return $this->params["box-user-name"] ;
+        }
         if (isset($this->params["box-username"])) {
-            return $this->params["box-username"] ; }
+            return $this->params["box-username"] ;
+        }
         $question = (isset($boxName))
             ? 'Enter SSH username of box '.$boxName
             : 'Enter SSH username of remote box';
@@ -160,7 +176,8 @@ class RackspaceBoxAdd extends BaseRackspaceAllOS {
 
     protected function getSSHKeyLocation() {
         if (isset($this->params["private-ssh-key-path"])) {
-            return $this->params["private-ssh-key-path"] ; }
+            return $this->params["private-ssh-key-path"] ;
+        }
         $question = 'Enter file path of private SSH Key';
         $this->params["private-ssh-key-path"] = self::askForInput($question, true) ;
         return $this->params["private-ssh-key-path"] ;
@@ -168,7 +185,8 @@ class RackspaceBoxAdd extends BaseRackspaceAllOS {
 
     protected function getSSHKeyName() {
         if (isset($this->params["ssh-key-name"])) {
-            return $this->params["ssh-key-name"] ; }
+            return $this->params["ssh-key-name"] ;
+        }
         $question = 'Enter Rackspace SSH Key Name (Empty for none)';
         $this->params["ssh-key-name"] = self::askForInput($question, true) ;
         return $this->params["ssh-key-name"] ;
@@ -179,7 +197,8 @@ class RackspaceBoxAdd extends BaseRackspaceAllOS {
         $loggingFactory = new \Model\Logging();
         $logging = $loggingFactory->getModel($this->params);
         try {
-            $server = $compute->server(); }
+            $server = $compute->server();
+        }
         catch (\Guzzle\Http\Exception\BadResponseException $e) {
             $responseBody = (string) $e->getResponse()->getBody();
             $statusCode   = $e->getResponse()->getStatusCode();
@@ -198,14 +217,16 @@ class RackspaceBoxAdd extends BaseRackspaceAllOS {
                 $serverSettings = array_merge($serverSettings, array('keypair'  => $this->getSSHKeyName()) ) ; }
             $server->create($serverSettings);
             $logging->log("Request for {$serverData["name"]} complete") ;
-            return $server ; }
+            return $server ;
+        }
         catch (\Guzzle\Http\Exception\BadResponseException $e) {
             // No! Something failed. Let's find out:
             $responseBody = (string) $e->getResponse()->getBody();
             $statusCode   = $e->getResponse()->getStatusCode();
             $headers      = $e->getResponse()->getHeaderLines();
             $logging->log("Failed creating {$serverData["name"]}:\n".sprintf("Status: %s\nBody: %s\nHeaders: %s", $statusCode, $responseBody, implode(', ', $headers))) ;
-            return null ; }
+            return null ;
+        }
     }
 
     protected function addServerToPapyrus($envName, $serverData) {
@@ -216,11 +237,15 @@ class RackspaceBoxAdd extends BaseRackspaceAllOS {
             if ($addr->version=="4") {
                 $server["target"] = $addr->addr ;
                 $server["target_public"] = $addr->addr ;
-                break ; } }
+                break ;
+            }
+        }
         foreach ($serverData->addresses->private as $addr) {
             if ($addr->version=="4") {
                 $server["target_private"] = $addr->addr ;
-                break ; } }
+                break ;
+            }
+        }
         $server["user"] = $this->getUsernameOfBox() ;
         $server["password"] = $this->getSSHKeyLocation() ;
         $server["provider"] = "Rackspace";
@@ -229,7 +254,9 @@ class RackspaceBoxAdd extends BaseRackspaceAllOS {
         $environments = \Model\AppConfig::getProjectVariable("environments");
         for ($i= 0 ; $i<count($environments); $i++) {
             if ($environments[$i]["any-app"]["gen_env_name"] == $envName) {
-                $environments[$i]["servers"][] = $server; } }
+                $environments[$i]["servers"][] = $server;
+            }
+        }
         \Model\AppConfig::setProjectVariable("environments", $environments);
     }
 
@@ -240,15 +267,17 @@ class RackspaceBoxAdd extends BaseRackspaceAllOS {
             if (!empty($server->error)) {
                 // @todo change this to logging and and dont exit
                 var_dump($server->error);
-                exit; }
-            else {
+                exit;
+            } else {
                 $loggingFactory = new \Model\Logging();
                 $logging = $loggingFactory->getModel($this->params);
                 $logging->log (sprintf(
                     "Waiting on %s/%-12s %4s%%",
                     $server->name(),
                     $server->status(),
-                    isset($server->progress) ? $server->progress : 0 ) ) ; } };
+                    isset($server->progress) ? $server->progress : 0 ) ) ;
+            }
+        };
         $server->waitFor(ServerState::ACTIVE, $this->getMaxWaitTime(), $callback);
         return $server;
     }
