@@ -19,7 +19,7 @@ class RaAllLinux extends BasePHPApp {
         $this->autopilotDefiner = "Ra";
         $this->fileSources = array(
           array(
-            "http://git.pharaohtools.com/git/phpengine/ra.git",
+            "https://github.com/PharaohTools/ra.git",
             "ra",
             null // can be null for none
           )
